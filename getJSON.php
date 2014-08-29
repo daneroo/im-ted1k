@@ -23,19 +23,19 @@ function queryForTableSince($table,$since,$samples) {
 function entriesForQuery($sql) {
     $result = mysql_query($sql) or die('Query failed: ' . mysql_error());
     $obsarray = array();
-    echo "[\n";
+    //echo "[\n";
     while ($dico = mysql_fetch_assoc($result)) {
         //$stamp = substr($row[0],0,10).'T'.substr($row[0],-8).'Z';
         //$dico['stamp']= substr($dico['stamp'],0,10).'T'.substr($dico['stamp'],-8).'Z';
 	// shorter overwrite char 10 with 'T' and append 'Z'
         $dico['stamp'][10] = 'T';
         $dico['stamp'] .= 'Z';
-        echo "  ".json_encode($dico).",\n";
+        //echo "  ".json_encode($dico).",\n";
         $obsarray[]=$dico;
     }
-    echo "]\n";
+    //echo "]\n";
 
-    //echo json_encode($obsarray);
+    echo json_encode($obsarray);
     mysql_free_result($result);
 }
 
@@ -48,7 +48,8 @@ function entriesForTableSince($table,$since,$samples) {
 
 
 //entriesForTableSince('watt',null,86400);
-entriesForTableSince('watt_tensec',null,8640);
+//entriesForTableSince('watt_tensec',null,8640);
+entriesForTableSince('watt_minute',null,1440);
 
 mysql_close($conn);
 ?>
