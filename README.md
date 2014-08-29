@@ -13,8 +13,10 @@ Notes in Evernote for now.
 ## Docker
 
 ## Legacy consolidation
+Have gathered the code I'm obsoleting into the legacy folder for convenient reference.
 
+* Old startup instructions for `cantor`
 * snookr-gcode-svn/green/scalr-utils/
-* CurrentCost (SheevaPlug code)
+    * CurrentCost|mirawatt (SheevaPlug code)
 * imetrical-couch
 
