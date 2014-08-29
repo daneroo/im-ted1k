@@ -248,7 +248,8 @@ if __name__ == "__main__":
             days = string.atol(a)
 
     # Check tables once
-    conn = MySQLdb.connect (host="127.0.0.1",user="aviso",passwd="",db="ted")
+    # conn = MySQLdb.connect (host="127.0.0.1",user="aviso",passwd="",db="ted")
+    conn = MySQLdb.connect (host = "172.17.42.1",user="aviso",passwd="",db="ted")
     cursor = conn.cursor ()
 
     forceDrop=False
@@ -269,7 +270,8 @@ if __name__ == "__main__":
             break
         
         #---------------loop
-        conn = MySQLdb.connect (host="127.0.0.1",user="aviso",passwd="",db="ted")
+        # conn = MySQLdb.connect (host="127.0.0.1",user="aviso",passwd="",db="ted")
+        conn = MySQLdb.connect (host = "172.17.42.1",user="aviso",passwd="",db="ted")
         cursor = conn.cursor ()
 
         # latestSecs = time.time()   +(1*86400)

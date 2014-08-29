@@ -198,7 +198,7 @@ def getGMTTimeWattsAndVoltsFromTedNative(packet):
 
 if __name__ == "__main__":
         usage = 'python %s  ( --duration <secs> | --forever) [--device /dev/ttyXXXX]' % sys.argv[0]
-        conn = MySQLdb.connect (host = "127.0.0.1",
+        conn = MySQLdb.connect (host = "172.17.42.1", # host = "127.0.0.1",
                                 user = "aviso",
                                 passwd = "",
                                 db = "ted")
