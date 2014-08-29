@@ -18,6 +18,7 @@ Have gathered the code I'm obsoleting into the legacy folder for convenient refe
 * Old startup instructions for `cantor`
 * TEDNative.log
 * snookr-gcode-svn/green/scalr-utils/
+    * php - feeds.php - getJSON.php
     * CurrentCost|mirawatt (SheevaPlug code)
 * imetrical-couch
 
