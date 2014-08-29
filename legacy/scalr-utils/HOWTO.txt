@@ -1,0 +1,255 @@
+-=-=-=  Pump imetrical appspots feed to local appengine
+while true; do 
+    for u in daniel jean louis; do
+    curl -m 30 -s -o tmp.xml "http://imetrical.appspot.com/feeds?owner=$u";
+    curl -m 30 -F "owner=$u" -F "content=@tmp.xml;type=text/xml"  http://localhost:8082/post;
+   done
+   sleep 30;
+done
+-- or --
+while true; do 
+   curl -m 30 -s -o tmp.xml "http://imetrical.appspot.com/feeds?owner=daniel"; 
+   curl -m 30 -F "owner=daniel" -F "content=@tmp.xml;type=text/xml"  http://localhost:8082/post; 
+   curl -m 30 -s -o tmp.xml "http://imetrical.appspot.com/feeds?owner=jean"; 
+   curl -m 30 -F "owner=jean" -F "content=@tmp.xml;type=text/xml" http://localhost:8082/post; 
+   curl -m 30 -s -o tmp.xml "http://imetrical.appspot.com/feeds?owner=louis"; 
+   curl -m 30 -F "owner=louis" -F "content=@tmp.xml;type=text/xml"  http://localhost:8082/post; 
+   sleep 30; 
+done
+
+-=-=-= Aztech:
+ OSX: tee.pl or rather python -u (unbuffered out)
+ python -u ReadAztechNative.py --device /dev/tty.usbserial-A50022xp|tee Aztech-01.txt
+ python -u ReadAztechNative.py --device /dev/tty.usbserial-A50022xp|./tee.pl Aztech-01.txt
+
+ python -u ReadAztechGPS.py --device /dev/tty.usbserial-A7005epa | tee Aztech.GPS.tty.usbserial-A7005epa.20090124.0200.txt
+
+ Extracting unique device id's from DEBUGON
+ grep "\[R\]" Aztech-01.txt | awk 'BEGIN {FS=","} {print $3}'|sort|uniq -c|sort -n
+
+-=-=-= Until There are CRON scripts:
+  SCREEN 6 on cantor
+   cd netbeans-workspace/green/scalr-utils/
+   
+  A-ReadTEDNative  #alternative --duration 86400 instead of --forever for periodic log statement
+    # in a screen as root:
+
+    while true; do echo `date` Restarted ReadTEDNative | tee -a TEDNative.log; python ReadTEDNative.py --forever --device /dev/ttyUSB0; sleep 1; done
+
+  B-Summarize.py until there is a cron
+    #   The while is for unexpected death.- New switches --days 1, --forever
+
+    while true; do time python Summarize.py --days 1 --forever; sleep 10; done
+
+  C-Push to imetrical.appspot.com (timeout 30s)
+      # OR to http://imetrical.morphexchange.com/post.jsp
+    while true; do curl -m 30 -s -o tmp.xml http://192.168.5.2/iMetrical/feeds.php; curl -m 30 -F "owner=daniel" -F "content=@tmp.xml;type=text/xml"  http://imetrical.appspot.com/post; sleep 1; done
+
+  D-Monitoring
+    # watch live and summary tables
+
+    while true; do for i in 'watt_day ' 'watt_hour' 'watt_minute' 'watt_tensec' 'watt' 'ted_service' ; do echo `mysql ted -N -B -e "select now(),'--',stamp,watt from $i order by stamp desc limit 1"` $i; done; sleep 9; echo; done
+
+    #Log output of TedNative Restarts
+
+    tail -f netbeans-workspace/green/scalr-utils/TEDNative.log
+
+
+
+  DEPRECATED:  in a screen:
+ -ReadTEDService.py populates watt and ted_service
+    while true; do echo `date` Restarted ReadTEDService | tee -a TEDService.log; python ReadTEDService.py --forever; done
+  or for a trace every day ...
+    while true; do echo `date` Restarted ReadTEDService | tee -a TEDService.log; python ReadTEDService.py --duration 86400; done
+
+
+-=-=-= Installing serial package: pyserial-2.4.tar.gz
+   Note pyserial has an example for py2exe in
+    pyserial-2.4/examples/setup_demo.py
+
+   -- From README.txt (as root)
+   Installation
+   ------------
+   Extract files from the archive, open a shell/console in that directory and
+   let Distutils do the rest: "python setup.py install"
+
+-=-=-= Invoking Incremental to reload TED.db over watt
+  This might be automated !
+
+Database
+ --db /archive/mirror/ted/TED.db
+ --db /ted/TED.db
+
+Redirecting : > coco.sql or  | mysql ted
+
+Date range
+  START=`date +%Y-%m-%d -d '15 day ago'`; END=`date +%Y-%m-%d -d '1 day ago'`; echo ${START} ${END}
+  time python Incremental.py --db /archive/mirror/ted/TED.db  --start "${START} 00:00:00" --stop "${END} 00:00:00" 
+
+As in:
+START=`date +%Y-%m-%d -d '15 day ago'`; END=`date +%Y-%m-%d -d '1 day ago'`; echo ${START} ${END}; time python Incremental.py --db /archive/mirror/ted/TED.db --start "${START} 00:00:00" --stop "${END} 00:00:00"  > coco.sql
+
+Deleting wat db before reload - to avoid mixed data from ted_service/ted_native
+  Note the start/end time in coco.sql and delete that range before loading
+head -1 coco.sql; tail -1 coco.sql
+REPLACE INTO watt (stamp, watt) VALUES ('2008-11-14 05:00:00', '530');
+REPLACE INTO watt (stamp, watt) VALUES ('2008-11-28 04:59:27', '530');
+convert that into delete statement:
+mysql -vvv ted -e "select count(*) from watt where stamp>='2008-11-14 05:00:00' and stamp<'2008-11-28 05:00:00'"
+mysql -vvv ted -e "delete from watt where stamp>='2008-11-14 05:00:00' and stamp<'2008-11-28 05:00:00'"
+
+Now load the data: (170s for 14 days)
+time mysql ted < coco.sql
+
+-=-=-= Invoking Summary after data reload
+ Hmm Summarize has no switches yet. handcode 
+    earliestSecs =  startOfDay(latestSecs,-20)
+
+-=-=-= Data Query from TED SQLite DB
+  The offset may not be right! Also may try other tables:
+     sqlite3 /archive/mirror/ted/TED.db ".tables"
+     sqlite3 /archive/mirror/ted/TED.db ".schema"
+         /ted/TED.db  /archive/mirror/ted/TED.db
+
+(echo ".mode column"; echo ".width 20 10"; echo "select datetime((tick/10000-62135582400000)/1000,\"unixepoch\",\"localtime\"),kw*1000 from RDU_day_DATA;") | sqlite3 /archive/mirror/ted/TED.db
+
+or how about with new offset and simpler arith:
+
+(echo ".mode column"; echo ".width 20 10"; echo "select datetime(tick/10000000-62135578800,\"unixepoch\",\"localtime\"),kw*1000 from RDU_day_DATA;") | sqlite3 /archive/mirror/ted/TED.db
+
+
+-=-=-= Comparing summary MySQL vs TED
+
+sqlite:
+for i in 'day' 'hour' 'minute' ; do echo $i `sqlite3 /ted/TED.db "select count(*),sum(kw),avg(kw)*1000 from RDU_${i}_DATA"`; done
+mysql
+for i in 'day' 'hour' 'minute' 'tensec' ; do echo $i `mysql ted -N -B -e "select count(*),avg(watt) as $i from watt_$i"`; done
+
+
+-=-=-= To pull TED.db from aria:
+
+from  aria: to acerama
+scp -p Programs/EnergyInc/TEDFootprints/TED.db .
+rsync -v --progress TED.db 192.168.3.143:TED.db
+
+
+Python dates:
+>>> time.strptime("1970-01-01 00:00:00", "%Y-%m-%d %H:%M:%S")
+(1970, 1, 1, 0, 0, 0, 3, 1, -1)
+
+>>> time.ctime((633534107180007500L / 10000 -62135582400000L)/1000)
+'Mon Aug  4 01:38:38 2008'
+
+-62135582400000L was derived from java as "01-01-02 23:00:00".getTime()
+
+def cnvTime(tedTimeString):
+    secs = ( string.atol(tedTimeString / 10000 - 62135582400000 ) / 1000
+    time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(secs))
+
+Mysql stuff:
+mysqladmin create ted
+
+DROP TABLE IF EXISTS watt;
+CREATE TABLE watt (
+  stamp datetime NOT NULL default '1970-01-01 00:00:00',
+  watt int(11) NOT NULL default '0',
+  PRIMARY KEY wattByStamp (stamp)
+); 
+DROP TABLE IF EXISTS wattminute;
+CREATE TABLE wattminute (
+  stamp datetime NOT NULL default '1970-01-01 00:00:00',
+  watt int(11) NOT NULL default '0',
+  PRIMARY KEY wattByStamp (stamp)
+); 
+DROP TABLE IF EXISTS watthour;
+CREATE TABLE watthour (
+  stamp datetime NOT NULL default '1970-01-01 00:00:00',
+  watt int(11) NOT NULL default '0',
+  PRIMARY KEY wattByStamp (stamp)
+); 
+DROP TABLE IF EXISTS wattday;
+CREATE TABLE wattday (
+  stamp datetime NOT NULL default '1970-01-01 00:00:00',
+  watt int(11) NOT NULL default '0',
+  PRIMARY KEY wattByStamp (stamp)
+); 
+
+# load watt:minute|hour|day table
+replace into wattminute select left(stamp,16) as g,avg(watt) from watt group by g;
+replace into watthour select left(stamp,13) as g,avg(watt) from watt group by g;
+replace into wattday select left(stamp,10) as g,avg(watt) from watt group by g;
+
+# examine minute grouping
+select left(stamp,16) as g,min(stamp),avg(watt),count(*) from watt where stamp>'2008-08-08 12:00:00' group by g;
+
+while true; do mysql -B ted -e "select now(),count(*) from watt"; sleep 10; done
+
+Historgram of Run-Lengths:
+python ReadSqlite3.py ~/TED.db |cut -d\  -f3|uniq -c|awk '{print $1}'|sort -n|uniq -c
+
+sqlite3 to ssh/mysql
+emacs PumpSqlite3ToMysql.py 
+time python PumpSqlite3ToMysql.py ~/TED.db | ssh euler mysql ted
+
+
+interesting selects:
+ select w.stamp, w.watt from watt w where w.stamp>='2008-08-07 00:00:00' AND w.stamp< ADDDATE('2008-08-07 00:00:00', INTERVAL 10 second); 
+ select w.watt, (select max(w2.watt) from watt w2 where w2.stamp>=w.stamp and w2.stamp<ADDDATE(w.stamp,INTERVAL 10 second)) as m  from watt w where w.stamp>='2008-08-07 00:00:00' limit 10; 
+
+Mounting ted on cantor:
+mkdir /ted
+mount -t cifs //aria/ted /ted
+read http://wiki.centos.org/TipsAndTricks/WindowsShares for other options for auto-mounting
+
+see /archive/mirror/ted/doMirror for cron archiving
+
+on cantor:
+time python PumpSqliteToMysql.py /archive/mirror/ted/TED.db |mysql ted
+
+GDATA python stuff:
+downloaded from http://code.google.com/p/gdata-python-client/
+ran:
+  python setup.py install --home=~/python
+and then:
+# running 
+export PYTHONPATH=~/python/lib/python/; python appendToGDATA.py --user myname --pw mypass
+
+ssh euler 'mysql -B -N ted -e "select concat(left(stamp,13),\":00:00\") as g,avg(watt) from watt group by g"'| awk '{printf "python appendToGDATA.py --user daniel.lauzon --pw PASS --stamp \"%s %s\" --watt %s\n",$1,$2,$3}' 
+  or appen to: > coco.sh
+  and
+  source coco.sh
+  ## captca after 200 rows...!!!
+
+while true; do mysql -N -B ted -e "select left(stamp,10) as g,count(*),min(stamp),max(stamp) from watt where stamp>'2008-09-09' group by g"; echo; sleep 10; done
+
+
+to produce Motion Spreadsheet:
+mysql ted -e "delete from event"
+
+mysql -B ted -e "select concat(watt,'-',duration) as label,left(stamp,10) as day,watt,duration,watt*duration/1000/60/60 as kwh from event"|awk '{printf "%s,%s,%s,%s,%s\n",$1,$2,$3,$4,$5}'>ted-event-200d.csv
+Ted-hour
+mysql  -B ted -e "select stamp,watt from watthour"|awk '{printf "%s %s,%s\n",$1,$2,$3}'>ted-hour.csv
+
+
+
+# get a motion pie chart:
+name day  x y color size
+
++-----------+------------+------+------+------------+------------+
+| name      | day        | X    | Y    | kWh        | kWh        |
++-----------+------------+------+------+------------+------------+
+| Evening   | 2008-07-29 | 0.29 | 1.71 |  8409.6000 |  8409.6000 |
+| Night     | 2008-07-30 | 2.00 | 1.00 |  5297.0000 |  5297.0000 |
+| Morning   | 2008-07-30 | 1.71 | 1.71 |  5231.0000 |  5231.0000 |
+
+
+mysql ted -B -e "select case floor(hour(stamp)/6) when 0 then 'Night' when 1 then 'Morning' when 2 then 'AfterNoon' else 'Evening' end as name,date(stamp) as day,round(cos(floor(hour(stamp)/6)*PI()/2)+1,2) as X,round(sin(floor(hour(stamp)/6)*PI()/2)+1,2) as Y,avg(watt)*6 as kWh,avg(watt)*6 as kWh from watthour group by day,name order by day,floor(hour(stamp)/6)"|awk '{printf "%s,%s,%s,%s,%s,%s\n",$1,$2,$3,$4,$5,$6}'>motion-4part.csv
+
+24 hour + AllDay at center kWh as color kW as size
+
+mysql ted -B -e "select 'AllDay' as name,date(stamp) as day,0 as X, 0 as Y,avg(watt)*24 as kWh,avg(watt) as kW from watthour group by day,name order by day"|awk '{printf "%s,%s,%s,%s,%s,%s\n",$1,$2,$3,$4,$5,$6}'>motion-24part-AllDay.csv
+#Append - No header
+mysql ted -N -B -e "select concat(hour(stamp),'h00') as name,date(stamp) as day,round(cos(hour(stamp)/24*2*PI()),2) as X,round(sin(hour(stamp)/24*2*PI()),2) as Y,avg(watt)*1 as kWh,avg(watt) as kW from watthour group by day,name order by day,hour(stamp)"|awk '{printf "%s,%s,%s,%s,%s,%s\n",$1,$2,$3,$4,$5,$6}'>>motion-24part-AllDay.csv
+
+
+

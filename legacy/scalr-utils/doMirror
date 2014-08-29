@@ -1,0 +1,59 @@
+#!/bin/sh
+# copy TED database: mounted by smb from aria
+# run  from cron on cantor:
+# */15 * * * *    cd /archive/mirror/ted; ./doMirror >>tedmirror.log 2>&1
+#
+# Mounting ted on cantor:
+#   mkdir /ted
+#   mount -t cifs //aria/ted /ted
+#  read http://wiki.centos.org/TipsAndTricks/WindowsShares for other options for auto-mounting
+
+# blank line
+echo
+# adjust from cron timing
+sleep 4
+echo `date` "TED mirror started"
+
+
+stamp=`date +%Y%m%d.%H%M`
+DBNAME=TED.db
+ARCNAME=TED.db.$stamp
+
+
+cp -p /ted/$DBNAME $DBNAME
+echo `date` "TED mirror copied from aria smbmount"
+cp -p $DBNAME $ARCNAME
+echo `date` "TED mirror copied for compression - stamped archival"
+
+# removed the --fast option for now 
+# 2008-08-12 : 60Mb->6.2Mb(30s) vs 6.3Mb(18s,fast))
+# bzip2 --fast $ARCNAME
+bzip2 $ARCNAME
+echo `date` "TED mirror compressed"
+
+ [ -d monthly ]   || mkdir monthly;
+ [ -d daily ]     || mkdir daily;
+ [ -d hourly ]    || mkdir hourly;
+ [ -d subhourly ] || mkdir subhourly
+
+ find . -maxdepth 1 -type f -name "$DBNAME.??????01.0000.bz2" -exec mv {} monthly \;
+ find . -maxdepth 1 -type f -name "$DBNAME.????????.0000.bz2" -exec mv {} daily \;
+ find . -maxdepth 1 -type f -name "$DBNAME.????????.??00.bz2" -exec mv {} hourly \;
+ find . -maxdepth 1 -type f -name "$DBNAME.????????.????.bz2" -exec mv {} subhourly \;
+
+# remove old backups from 
+# subhourly (keep 6 hours) , we are not making any now
+# hourly (keep 1 days)
+# daily (keep 32 days)
+# and keep *ALL* monthly backups
+ find subhourly -maxdepth 1 -mmin +360 -type f -name "$DBNAME.????????.????.bz2" -exec /bin/rm {} \;
+ find hourly -maxdepth 1 -mtime +0 -type f -name "$DBNAME.????????.????.bz2" -exec /bin/rm {} \;
+ find daily -maxdepth 1 -mtime +31 -type f -name "$DBNAME.????????.????.bz2" -exec /bin/rm {} \;
+
+# now move
+# remove extra copies..
+echo `date` "TED mirror moved"
+
+
+echo `date` "TED mirror done"
+

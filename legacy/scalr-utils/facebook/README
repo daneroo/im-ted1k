@@ -1,0 +1,11 @@
+Working fbml handle update :
+php updateRefhandle.php
+
+Also pasted in a gooogle chart api by hand:
+ -Produces local png's and urls for google chart
+  Doesn't yet work on cantor ???
+   python getFeed.py "http://cantor/iMetrical/feeds.php"
+
+
+Dropping
+The python side is having problems with library dependancies

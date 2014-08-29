@@ -1,0 +1,5 @@
+<!-- Test case for drift calculations drift +/- end of day/startof day -->
+2009-10-09T23:59:49-0400 <msg><src>CC128-v0.15</src><dsb>00056</dsb><time>23:59:19</time><tmprF>67.7</tmprF><sensor>0</sensor><id>00628</id><type>1</type><ch1><watts>00156</watts></ch1><ch2><watts>01485</watts></ch2></msg>
+2009-10-09T23:59:55-0400 <msg><src>CC128-v0.15</src><dsb>00056</dsb><time>00:00:25</time><tmprF>67.7</tmprF><sensor>0</sensor><id>00628</id><type>1</type><ch1><watts>00157</watts></ch1><ch2><watts>01493</watts></ch2></msg>
+2009-10-10T00:00:01-0400 <msg><src>CC128-v0.15</src><dsb>00056</dsb><time>23:59:31</time><tmprF>67.7</tmprF><sensor>0</sensor><id>00628</id><type>1</type><ch1><watts>00159</watts></ch1><ch2><watts>01500</watts></ch2></msg>
+2009-10-10T00:00:08-0400 <msg><src>CC128-v0.15</src><dsb>00056</dsb><time>00:00:38</time><tmprF>67.7</tmprF><sensor>0</sensor><id>00628</id><type>1</type><ch1><watts>00156</watts></ch1><ch2><watts>01490</watts></ch2></msg>
