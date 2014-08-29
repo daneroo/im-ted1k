@@ -16,6 +16,7 @@ Notes in Evernote for now.
 Have gathered the code I'm obsoleting into the legacy folder for convenient reference.
 
 * Old startup instructions for `cantor`
+* TEDNative.log
 * snookr-gcode-svn/green/scalr-utils/
     * CurrentCost|mirawatt (SheevaPlug code)
 * imetrical-couch
