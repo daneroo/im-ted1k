@@ -95,6 +95,7 @@ def fillDayTable(secs,fromTableSuffix):
     replaceSql = "replace into %s (stamp,watt) values ('%s',%.0f)" % (intoTableName,startGMT,avgForDay)
     #print replaceSql
     cursor.execute(replaceSql)
+    conn.commit()
 
     #### CHECK that rowcount is exactly 1  (how about updating
     #print " -- %s inserted %d entries (%6.2fs.)" % (intoTableName,cursor.rowcount,time.time()-timerstart)
@@ -122,6 +123,7 @@ def fillTable(suffix,groupingWidth,rightPad,start,stop,fromTableSuffix):
     replaceSql = "replace into %s %s" % (intoTableName,selectSql)
     #print replaceSql
     cursor.execute(replaceSql)
+    conn.commit()
     #print " -- %s inserted %d entries (%6.2fs.)" % (intoTableName,cursor.rowcount,time.time()-timerstart)
 
     
