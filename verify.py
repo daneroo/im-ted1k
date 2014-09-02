@@ -37,8 +37,7 @@ def formatTimeForMySQL(secs):
     return time.strftime("%Y-%m-%d %H:%M:%S",time.gmtime(secs))
 
 def formatTimeForOutputFilename(secs):
-    # OUTPUTLOGDIR="/data/jsonl"
-    OUTPUTLOGDIR="/data"
+    OUTPUTLOGDIR="/data/jsonl"
     DEVICEALIAS="TED1k"
     SUFFIX="jsonl"
     # this is the name of the current logrotated file
@@ -99,6 +98,7 @@ def store(stamp,watt):
         obj = {"stamp": formatTimeForJSON(secs), "watt":watt}
         # print(filename,json.dumps(obj))
         json.dump(obj,f)
+        f.write('\n')
 
 
 if __name__ == "__main__":
