@@ -36,6 +36,17 @@ def datetimeToSecs(dt):
 def formatTimeForMySQL(secs):
     return time.strftime("%Y-%m-%d %H:%M:%S",time.gmtime(secs))
 
+def formatTimeForOutputFilename(secs):
+    # OUTPUTLOGDIR="/data/jsonl"
+    OUTPUTLOGDIR="/data"
+    DEVICEALIAS="TED1k"
+    SUFFIX="jsonl"
+    # this is the name of the current logrotated file
+    #OUTPUTSTAMPFORMAT="%Y%m%dT%H%M00Z" # by Minute
+    OUTPUTSTAMPFORMAT="%Y%m%dT000000Z" # by Day
+    stamp =  time.strftime(OUTPUTSTAMPFORMAT,time.gmtime(secs))
+    return "%s/%s-%s.%s" %(OUTPUTLOGDIR,DEVICEALIAS,stamp,SUFFIX)
+
 def formatTimeForJSON(secs):
     return time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime(secs))
 
@@ -76,6 +87,20 @@ def getAllByDate():
         for row in rows:
             yield row;
 
+# append json entry to outputfile
+# TODO 
+# create directory
+# check for existence of file: overwrite vs append...
+# maybe cache outputfile descriptor
+def store(stamp,watt):
+    secs = datetimeToSecs(stamp);
+    filename = formatTimeForOutputFilename(secs)
+    with open(filename, 'a') as f:
+        obj = {"stamp": formatTimeForJSON(secs), "watt":watt}
+        # print(filename,json.dumps(obj))
+        json.dump(obj,f)
+
+
 if __name__ == "__main__":
 
     usage = 'python %s --verify --dump PFX)' % sys.argv[0]
@@ -110,15 +135,13 @@ if __name__ == "__main__":
     startTime = time.time()
     records=0
     for (stamp,watt) in getAllByDate():
+
         records += 1
         if records%10000 == 0:
             elapsed = (time.time()-startTime)
             rate = records/elapsed
             print "%d records in %f seconds: rate: %f" % (records,elapsed,rate)
-
-            # print("stamp:{} watt:{} ".format(stamp,watt))
-            obj = {"stamp": formatTimeForJSON(datetimeToSecs(stamp)), "watt":watt}
-            print(json.dumps(obj))
+        store(stamp,watt)
 
     elapsed = (time.time()-startTime)
     rate = records/elapsed
