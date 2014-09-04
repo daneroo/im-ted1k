@@ -17,6 +17,9 @@ RUN \
   echo 'America/Montreal'  > /etc/timezone && \
   dpkg-reconfigure --frontend noninteractive tzdata
 
+# Force stdin, stdout and stderr to be totally unbuffered
+ENV PYTHONUNBUFFERED 1
+
 # Add our code (.dockerignore)
 ADD . /src
 
