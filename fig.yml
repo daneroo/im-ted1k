@@ -1,14 +1,8 @@
 # just a start... from the fig example page
-web:
+summarize:
   build: .
-  command: php -S 0.0.0.0:8000 -t /code
-  ports:
-    - "8000:8000"
+  command: do time python Summarize.py --days 1 --forever
   links:
     - db
   volumes:
-    - .:/code
-db:
-  image: orchardup/mysql
-  environment:
-    MYSQL_DATABASE: wordpress
+    - .:/src

@@ -2,15 +2,21 @@
 
 As I rebuild cantor, and wanting to preserve data capture, I decided to consolidate som previous code. We are going to [Docker](https://www.docker.com/)ize the components.
 
-Notes in Evernote for now.
+Notes in Evernote for now. 
+
+[Editing files in a container (Samba)](https://groups.google.com/forum/#!topic/docker-user/UubYr7b4fMI)
 
 ## Components
 
 * Capture
 * Summarize
 * Publish
+* Monitor
 
 ## Docker
+
+* Use of fig : install 0.5.2 as root on cantor
+* (directory layout)
 
 ## Legacy consolidation
 Have gathered the code I'm obsoleting into the legacy folder for convenient reference.
