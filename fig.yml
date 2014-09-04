@@ -7,7 +7,7 @@ summarize:
 
 monitor:
   build: .
-  command: monitor.sh
+  command: ./monitor.sh
   volumes:
     - .:/src
   
