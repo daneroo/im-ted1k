@@ -13,6 +13,8 @@ Notes in Evernote for now.
 * mv src to subfolder
 * cleanup unneeded src
 * python refactoring (modules)
+* finish verify/dump
+* figure out restart strategy for capture
 * include ReadTEDNative.py -> CaptureTED1k.py in fig
 
 [Editing files in a container (Samba)](https://groups.google.com/forum/#!topic/docker-user/UubYr7b4fMI)
