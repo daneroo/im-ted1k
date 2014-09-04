@@ -12,8 +12,10 @@ RUN \
   apt-get update && \
   apt-get -y install python-mysqldb python-serial mysql-client
 
-# Set timezone ?
-# ZZ='America/Montreal'; [ $ZZ = `cat /etc/timezone` ] || (echo $ZZ > /etc/timezone; sudo dpkg-reconfigure --frontend noninteractive tzdata)
+# Set timezone 
+RUN \ 
+  echo 'America/Montreal'  > /etc/timezone && \
+  dpkg-reconfigure --frontend noninteractive tzdata
 
 # Add our code (.dockerignore)
 ADD . /src
