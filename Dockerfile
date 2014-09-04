@@ -10,7 +10,7 @@ FROM dockerfile/python
 # Install Python.
 RUN \
   apt-get update && \
-  apt-get -y install python-mysqldb python-serial mysql-client
+  DEBIAN_FRONTEND=noninteractive apt-get install -y python-mysqldb python-serial mysql-client php5-cli php5-mysql
 
 # Set timezone 
 RUN \ 
