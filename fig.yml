@@ -4,3 +4,6 @@ summarize:
   command: python Summarize.py --days 1 --forever
   volumes:
     - .:/src
+
+monitor:
+  command: monitor.sh
