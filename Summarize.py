@@ -8,6 +8,10 @@ import calendar
 import datetime
 from scalr import logInfo,logWarn,logError
 
+# Config
+MYSQL_PORT_3306_TCP_ADDR = '172.17.42.1'
+# MYSQL_PORT_3306_TCP_PORT = '3306'
+MYSQL_ENV_MYSQL_DATABASE = 'ted'
 
 # args --drop --start,... --mysqldb --update (select >current (+ offset))
 ##     So Here is the flow
@@ -251,7 +255,8 @@ if __name__ == "__main__":
 
     # Check tables once
     # conn = MySQLdb.connect (host="127.0.0.1",user="aviso",passwd="",db="ted")
-    conn = MySQLdb.connect (host = "172.17.42.1",user="aviso",passwd="",db="ted")
+    # conn = MySQLdb.connect (host = "172.17.42.1",user="aviso",passwd="",db="ted")
+    conn = MySQLdb.connect (host = MYSQL_PORT_3306_TCP_ADDR,db=MYSQL_ENV_MYSQL_DATABASE)
     cursor = conn.cursor ()
 
     forceDrop=False
@@ -273,7 +278,8 @@ if __name__ == "__main__":
         
         #---------------loop
         # conn = MySQLdb.connect (host="127.0.0.1",user="aviso",passwd="",db="ted")
-        conn = MySQLdb.connect (host = "172.17.42.1",user="aviso",passwd="",db="ted")
+        # conn = MySQLdb.connect (host = "172.17.42.1",user="aviso",passwd="",db="ted")
+        conn = MySQLdb.connect (host = MYSQL_PORT_3306_TCP_ADDR,db=MYSQL_ENV_MYSQL_DATABASE)
         cursor = conn.cursor ()
 
         # latestSecs = time.time()   +(1*86400)

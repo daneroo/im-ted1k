@@ -13,7 +13,8 @@ if ($scope<0) $scope = fmod(intval(time()/10),5);
 
 // Connect to db
 // $dbname = 'ted'; $dbhost = 'localhost'; $dbuser = 'aviso'; $dbpass = '';
-$dbname = 'ted'; $dbhost = '172.17.42.1'; $dbuser = 'aviso'; $dbpass = '';
+// $dbname = 'ted'; $dbhost = '172.17.42.1'; $dbuser = 'aviso'; $dbpass = '';
+$dbname = 'ted'; $dbhost = '172.17.42.1'; $dbuser = ''; $dbpass = '';
 $conn = mysql_connect($dbhost, $dbuser, $dbpass) or die ('Error connecting to mysql');
 mysql_select_db($dbname);
 

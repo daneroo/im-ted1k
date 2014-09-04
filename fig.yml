@@ -2,18 +2,19 @@
 summarize:
   build: .
   command: python Summarize.py --days 1 --forever
-  volumes:
-    - .:/src
+  # volumes:
+  #   - .:/src
 
 monitor:
   build: .
   command: ./monitor.sh
-  volumes:
-    - .:/src
+  # volumes:
+  #   - .:/src
 
 publish:
-  build: ./dockerfiles/php-cli
-  command: bash -c date
-  volumes:
-    - .:/src
+  # build: dockerfiles/php-cli
+  build: .
+  command: ./publish.sh
+  # volumes:
+  #   - .:/src
   

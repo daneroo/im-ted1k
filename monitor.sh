@@ -9,6 +9,6 @@ while true; do
     echo `mysql -h"$MYSQL_PORT_3306_TCP_ADDR" -P"$MYSQL_PORT_3306_TCP_PORT" $MYSQL_ENV_MYSQL_DATABASE -N -B -e "select '-',stamp,watt from $i order by stamp desc limit 1"` UTC $i;
   done;
   date -u +"- %Y-%m-%d %H:%M:%S     UTC now"
-  sleep 9; 
+  sleep 9
   echo;
 done
