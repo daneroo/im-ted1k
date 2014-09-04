@@ -2,7 +2,5 @@
 summarize:
   build: .
   command: do time python Summarize.py --days 1 --forever
-  links:
-    - db
   volumes:
     - .:/src
