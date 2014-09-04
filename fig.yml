@@ -10,4 +10,10 @@ monitor:
   command: ./monitor.sh
   volumes:
     - .:/src
+
+publish:
+  build: ./dockerfiles/php-cli
+  command: bash -c date
+  volumes:
+    - .:/src
   
