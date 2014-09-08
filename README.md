@@ -52,30 +52,39 @@ Have gathered the code I'm obsoleting into the legacy folder for convenient refe
 # Dev notes
 Run a mysql (OSX/boot2docker)
 
-* build my python env
-    
-    docker build -t daneroo/python-ted1k .
-    docker run -it --rm --link mysql-ted:mysql daneroo/python-ted1k
+* Restore Summaries, on init (dirac) 2231 days since 2008-07-30 as of 2014-08-06
+
+    fig run --rm summarize bash
+    time python Summarize.py --days 2500 --duration 1
 
 
-* pick an image: mysql, centurylink/mysql, dockerfile/mysql ?
+* Run the database on dirac:
+Databse port is exposed so all containers so we can talk to 172.17.42.1:3306/ted without linking.
+
+We can also currently talk to (192.168.5.132) cantor.imetrical.com:3306/ted from dirac...
+
+Pick an image: [dockerfile/mysql](https://registry.hub.docker.com/u/dockerfile/mysql/) (dropped [centurylink/mysql](https://registry.hub.docker.com/u/centurylink/mysql/))
 
 
-    # run the database
-    docker run --name mysql-ted -d -p 3306:3306 -e MYSQL_DATABASE=ted centurylink/mysql
+    # run the database: the port is exposed
+    docker run -d --name mysql -p 3306:3306 dockerfile/mysql
 
     # copy some files over (OSX)
-    scp -i ~/.ssh/id_boot2docker backup/ted.watt.20140806.0016.sql.bz2 docker@$(/usr/local/bin/boot2docker ip 2>/dev/null):~
+    scp -i ~/.ssh/id_boot2docker ~/Downloads/TED1K-backup/ted.watt.20140806.0016.sql.bz2 docker@$(/usr/local/bin/boot2docker ip 2>/dev/null):~
 
     #restore a database (binding /home/docker in vm to /backup)
-    docker run -it --rm --link mysql-ted:mysql -v /home/docker:/backup centurylink/mysql bash
+    docker run -it --rm --link mysql:mysql -v /home/docker:/backup dockerfile/mysql bash
+    # or run the clien directly
+    docker run -it --rm --link mysql:mysql -v /home/docker:/backup dockerfile/mysql bash -c 'mysql -h $MYSQL_PORT_3306_TCP_ADDR'
 
-    # took 12 minutes
-    time bzcat /backup/ted.watt.20140806.0016.sql.bz2 |mysql -h"$MYSQL_PORT_3306_TCP_ADDR" -P"$MYSQL_PORT_3306_TCP_PORT" $MYSQL_ENV_MYSQL_DATABASE
+    # create the database (now that we are usin docerfile/mysql)
+    mysqladmin -h $MYSQL_PORT_3306_TCP_ADDR create ted
+    # restore took 12 minutes
+    time bzcat /backup/ted.watt.20140806.0016.sql.bz2 |mysql -h"$MYSQL_PORT_3306_TCP_ADDR" -P"$MYSQL_PORT_3306_TCP_PORT" ted
 
     mysqladmin -h"$MYSQL_PORT_3306_TCP_ADDR" -P"$MYSQL_PORT_3306_TCP_PORT" proc
 
     #run a mysql client
-    docker run -it --rm --link mysql-ted:mysql centurylink/mysql sh -c 'exec mysql -h"$MYSQL_PORT_3306_TCP_ADDR" -P"$MYSQL_PORT_3306_TCP_PORT" $MYSQL_ENV_MYSQL_DATABASE'
+    docker run -it --rm --link mysql:mysql dockerfile/mysql sh -c 'exec mysql -h"$MYSQL_PORT_3306_TCP_ADDR" -P"$MYSQL_PORT_3306_TCP_PORT" ted'
 
 
