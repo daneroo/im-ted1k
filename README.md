@@ -5,8 +5,9 @@ As I rebuild cantor, and wanting to preserve data capture, I decided to consolid
 Previous Notes in Evernote for now. 
 
 ## TODO
+* install [nsenter](https://github.com/jpetazzo/nsenter) on `cantor`
 * python refactoring (modules)
-* finish verify/dump
+* finish verify/dump add to fig
 * mv src to subfolder
 * second publish to Firebase
 * figure out restart strategy for capture
