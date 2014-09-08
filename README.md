@@ -2,12 +2,13 @@
 
 As I rebuild cantor, and wanting to preserve data capture, I decided to consolidate som previous code. We are going to [Docker](https://www.docker.com/)ize the components.
 
-Notes in Evernote for now. 
+Previous Notes in Evernote for now. 
 
 ## TODO
-* mv src to subfolder
 * python refactoring (modules)
 * finish verify/dump
+* mv src to subfolder
+* second publish to Firebase
 * figure out restart strategy for capture
 * include ReadTEDNative.py -> CaptureTED1k.py in fig
 
@@ -32,6 +33,11 @@ Notes in Evernote for now.
 * Use of fig : install 0.5.2 as root on cantor
 * (directory layout)
 
+Run a single command, and attach data volume:
+
+    docker run -it --rm  -v $(pwd)/data:/data imted1k_monitor bash
+    time python verify.py
+
 ## Legacy consolidation
 Have gathered the code I'm obsoleting into the legacy folder for convenient reference.
 
@@ -40,7 +46,7 @@ Have gathered the code I'm obsoleting into the legacy folder for convenient refe
 * snookr-gcode-svn/green/scalr-utils/
     * php - feeds.php - getJSON.php
     * CurrentCost|mirawatt (SheevaPlug code)
-* imetrical-couch
+* imetrical-couch (not yet moved ?)
 
 # Dev notes
 Run a mysql (OSX/boot2docker)
