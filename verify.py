@@ -1,10 +1,11 @@
 import sys
 import getopt
-from scalr import logInfo,logWarn,logError
 import MySQLdb
 import time
 import calendar
-import json
+from ted1k.logging import logInfo,logWarn,logError
+from ted1k.filer import Filer
+from ted1k.datestamp import datetimeToSecs
 
 # Config
 MYSQL_PORT_3306_TCP_ADDR = '172.17.42.1'
@@ -34,24 +35,8 @@ def startOfDay(secs,offsetInDays):
     startOfDayWithOffsetSecs  = time.mktime(startOfDayWithOffsetTuple)
     return startOfDayWithOffsetSecs
 
-def datetimeToSecs(dt):
-    return calendar.timegm(dt.timetuple())
-
 def formatTimeForMySQL(secs):
     return time.strftime("%Y-%m-%d %H:%M:%S",time.gmtime(secs))
-
-def formatTimeForOutputFilename(secs):
-    OUTPUTLOGDIR="/data/jsonl"
-    DEVICEALIAS="TED1k"
-    SUFFIX="jsonl"
-    # this is the name of the current logrotated file
-    #OUTPUTSTAMPFORMAT="%Y%m%dT%H%M00Z" # by Minute
-    OUTPUTSTAMPFORMAT="%Y%m%dT000000Z" # by Day
-    stamp =  time.strftime(OUTPUTSTAMPFORMAT,time.gmtime(secs))
-    return "%s/%s-%s.%s" %(OUTPUTLOGDIR,DEVICEALIAS,stamp,SUFFIX)
-
-def formatTimeForJSON(secs):
-    return time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime(secs))
 
 # generator for tuples of [startOfDaySecs,endOfDaySecs)
 # could generalize for direction, boundary conditions
@@ -90,45 +75,6 @@ def getAllByDate():
         for row in rows:
             yield row;
 
-# append json entry to outputfile
-# TODO 
-# create directory
-# check for existence of file: overwrite vs append...
-# maybe cache outputfile descriptor
-class Filer:
-    def __init__(self):
-        logInfo('Setting up Filer')
-        self.file=None
-        self.filename=None
-    # def __del__(self):
-    #     logInfo('Destroying Filer')
-
-    def updateFile(self,secs):
-        newFileName = formatTimeForOutputFilename(secs)
-        if newFileName != self.filename:
-            logInfo('filename: %s -> %s' % (self.filename,newFileName))
-            if self.file !=None:
-                self.file.close()
-            self.file = open(newFileName, 'a')
-            self.filename=newFileName
-
-    def store(self,stamp,watt):
-        secs = datetimeToSecs(stamp);
-        obj = {"stamp": formatTimeForJSON(secs), "watt":watt}
-        self.updateFile(secs)
-        json.dump(obj,self.file)
-        self.file.write('\n')
-
-    #  for use with with!
-    def __enter__(self):
-        # logInfo('Entering Filer')
-        return self
-    def __exit__(self, type, value, traceback):
-        # logInfo('Exiting Filer')
-        if self.file !=None:
-            self.file.close()
-        self.file=None
-        self.filename=None
 
 if __name__ == "__main__":
 
@@ -166,7 +112,7 @@ if __name__ == "__main__":
 
     with Filer() as filer:    
         for (stamp,watt) in getAllByDate():
-            if records>1000000: break;
+            # if records>1000000: break;
             records += 1
             if records%100000 == 0:
                 elapsed = (time.time()-startTime)
