@@ -95,15 +95,40 @@ def getAllByDate():
 # create directory
 # check for existence of file: overwrite vs append...
 # maybe cache outputfile descriptor
-def store(stamp,watt):
-    secs = datetimeToSecs(stamp);
-    filename = formatTimeForOutputFilename(secs)
-    with open(filename, 'a') as f:
-        obj = {"stamp": formatTimeForJSON(secs), "watt":watt}
-        # print(filename,json.dumps(obj))
-        json.dump(obj,f)
-        f.write('\n')
+class Filer:
+    def __init__(self):
+        logInfo('Setting up Filer')
+        self.file=None
+        self.filename=None
+    # def __del__(self):
+    #     logInfo('Destroying Filer')
 
+    def updateFile(self,secs):
+        newFileName = formatTimeForOutputFilename(secs)
+        if newFileName != self.filename:
+            logInfo('filename: %s -> %s' % (self.filename,newFileName))
+            if self.file !=None:
+                self.file.close()
+            self.file = open(newFileName, 'a')
+            self.filename=newFileName
+
+    def store(self,stamp,watt):
+        secs = datetimeToSecs(stamp);
+        obj = {"stamp": formatTimeForJSON(secs), "watt":watt}
+        self.updateFile(secs)
+        json.dump(obj,self.file)
+        self.file.write('\n')
+
+    #  for use with with!
+    def __enter__(self):
+        # logInfo('Entering Filer')
+        return self
+    def __exit__(self, type, value, traceback):
+        # logInfo('Exiting Filer')
+        if self.file !=None:
+            self.file.close()
+        self.file=None
+        self.filename=None
 
 if __name__ == "__main__":
 
@@ -138,14 +163,16 @@ if __name__ == "__main__":
 
     startTime = time.time()
     records=0
-    for (stamp,watt) in getAllByDate():
 
-        records += 1
-        if records%10000 == 0:
-            elapsed = (time.time()-startTime)
-            rate = records/elapsed
-            print "%d records in %f seconds: rate: %f" % (records,elapsed,rate)
-        store(stamp,watt)
+    with Filer() as filer:    
+        for (stamp,watt) in getAllByDate():
+            if records>1000000: break;
+            records += 1
+            if records%100000 == 0:
+                elapsed = (time.time()-startTime)
+                rate = records/elapsed
+                print "%d records in %f seconds: rate: %f" % (records,elapsed,rate)
+            filer.store(stamp,watt)
 
     elapsed = (time.time()-startTime)
     rate = records/elapsed
