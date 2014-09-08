@@ -5,19 +5,20 @@ As I rebuild cantor, and wanting to preserve data capture, I decided to consolid
 Notes in Evernote for now. 
 
 ## TODO
-* Fix config for MYSQL: Summarize, monitor, publish
-    * use 172.17.42.1:3306/ted (implicitly root@container)
-    * works on cantor:guests because of GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION
-    * works on boot2docker guests if mysql's port 3306 is redirected
-    * default to aviso@172.17.42.1/ted for cantor:host
 * mv src to subfolder
-* cleanup unneeded src
 * python refactoring (modules)
 * finish verify/dump
 * figure out restart strategy for capture
 * include ReadTEDNative.py -> CaptureTED1k.py in fig
 
 [Editing files in a container (Samba)](https://groups.google.com/forum/#!topic/docker-user/UubYr7b4fMI)
+### Done
+* Cleanup unneeded src
+* Fix config for MYSQL: Summarize, monitor, publish
+    * use 172.17.42.1:3306/ted (implicitly root@container)
+    * works on cantor:guests because of GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION
+    * works on boot2docker guests if mysql's port 3306 is redirected
+    * default to aviso@172.17.42.1/ted for cantor:host
 
 ## Components
 
