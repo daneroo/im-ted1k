@@ -22,6 +22,18 @@ def formatTimeForOutputFilename(secs):
     stamp =  time.strftime(OUTPUTSTAMPFORMAT,time.gmtime(secs))
     return "%s/%s-%s.%s" %(OUTPUTLOGDIR,DEVICEALIAS,stamp,SUFFIX)
 
+def formatOutputLine(secs,watt):
+    obj = {"stamp": formatTimeForJSON(secs), "watt":watt}
+    line = json.dumps(obj)+'\n'
+    return line
+
+# return (filename,line) - grouped to avoid double conversion to secs
+def filenameAndLine(stamp,watt):
+    secs = datetimeToSecs(stamp);
+    filename = formatTimeForOutputFilename(secs)
+    line = formatOutputLine(secs,watt)
+    return (filename,line)
+
 def ensure_dir():
     if not os.path.exists(OUTPUTLOGDIR):
         logInfo('Creating directory: %s' % OUTPUTLOGDIR)
@@ -33,26 +45,41 @@ class Filer:
         self.file=None
         self.filename=None
         ensure_dir()
-    # def __del__(self):
-    #     logInfo('Destroying Filer')
 
-    def updateFile(self,secs):
-        newFileName = formatTimeForOutputFilename(secs)
-        if newFileName != self.filename:
-            logInfo('filename: %s -> %s' % (self.filename,newFileName))
+    def updateFile(self,filename):
+        if filename != self.filename:
+            logInfo('filename: %s -> %s' % (self.filename,filename))
             if self.file !=None:
                 self.file.close()
-            self.file = open(newFileName, 'a')
-            self.filename=newFileName
+            self.file = open(filename, 'a')
+            self.filename=filename
 
     def store(self,stamp,watt):
-        secs = datetimeToSecs(stamp);
-        obj = {"stamp": formatTimeForJSON(secs), "watt":watt}
-        self.updateFile(secs)
-        json.dump(obj,self.file)
-        self.file.write('\n')
+        (filename,line) = filenameAndLine(stamp,watt)
+        self.updateFile(filename)
+        self.file.write(line)
 
-    #  for use with with!
+    def storeMany(self,rows):
+        pendingLines = [];
+
+        logInfo('-storeMany %d' % len(rows))
+        for (stamp,watt) in rows:
+            (filename,line) = filenameAndLine(stamp,watt)
+            # self.updateFile(filename)
+            # self.file.write(line)
+            if filename != self.filename:
+                logInfo('+storeMany flush %d' % len(pendingLines))
+                if len(pendingLines)>0:
+                    self.file.writelines(pendingLines)
+                    pendingLines=[]
+                self.updateFile(filename)
+            pendingLines.append(line)
+
+        logInfo('+storeMany flush %d' % len(pendingLines))
+        self.file.writelines(pendingLines)
+        pendingLines=[];
+        
+    #  for use with with! Allows cleaning up the last opened file...
     def __enter__(self):
         # logInfo('Entering Filer')
         return self
