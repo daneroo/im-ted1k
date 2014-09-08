@@ -33,7 +33,7 @@ Previous Notes in Evernote for now.
 * Use of fig : install 0.5.2 as root on cantor
 * (directory layout)
 
-Run a single command, and attach data volume:
+Run a single command, and attach data volume, e.g.:
 
     docker run -it --rm  -v $(pwd)/data:/data imted1k_monitor bash
     time python verify.py

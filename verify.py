@@ -6,6 +6,10 @@ import time
 import calendar
 import json
 
+# Config
+MYSQL_PORT_3306_TCP_ADDR = '172.17.42.1'
+# MYSQL_PORT_3306_TCP_PORT = '3306'
+MYSQL_ENV_MYSQL_DATABASE = 'ted'
 
 def executeQuery(conn, query):
      cursor = conn.cursor()
@@ -130,7 +134,7 @@ if __name__ == "__main__":
     logInfo("Verification %s" % verify)
     logInfo("Dump %s, prefix %s" % (dump,dumpPrefix))
 
-    conn = MySQLdb.connect (host = "172.17.0.5",db="ted")
+    conn = MySQLdb.connect (host = MYSQL_PORT_3306_TCP_ADDR,db=MYSQL_ENV_MYSQL_DATABASE)
 
     startTime = time.time()
     records=0
