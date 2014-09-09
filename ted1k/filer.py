@@ -59,23 +59,25 @@ class Filer:
         self.updateFile(filename)
         self.file.write(line)
 
+    # Cache many lines - flush with writeLines (faster)
     def storeMany(self,rows):
         pendingLines = [];
 
-        logInfo('-storeMany %d' % len(rows))
+        # logInfo('-storeMany %d' % len(rows))
         for (stamp,watt) in rows:
             (filename,line) = filenameAndLine(stamp,watt)
-            # self.updateFile(filename)
-            # self.file.write(line)
+
+            # flush pending lines (before updateFile is called)
             if filename != self.filename:
-                logInfo('+storeMany flush %d' % len(pendingLines))
+                # logInfo('+storeMany flush %d' % len(pendingLines))
                 if len(pendingLines)>0:
                     self.file.writelines(pendingLines)
                     pendingLines=[]
                 self.updateFile(filename)
             pendingLines.append(line)
 
-        logInfo('+storeMany flush %d' % len(pendingLines))
+        # flush all remaining lines
+        # logInfo('+storeMany flush %d' % len(pendingLines))
         self.file.writelines(pendingLines)
         pendingLines=[];
         
