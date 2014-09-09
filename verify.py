@@ -81,7 +81,7 @@ if __name__ == "__main__":
             elapsed = (time.time()-startTime)
             rate = records/elapsed
             print "%d records in %f seconds: rate: %f" % (records,elapsed,rate)
-            if records>1000000: break;
+            # if records>1000000: break;
 
     # Slower verify...
     # with Filer() as filer:    
