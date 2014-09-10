@@ -4,10 +4,21 @@ As I rebuild cantor, and wanting to preserve data capture, I decided to consolid
 
 Previous Notes in Evernote for now. 
 
+## Operation
+on `cantor`:
+
+      cd im-ted1k
+      # build (move `./data/` out of way ?)
+      fig build
+      # run
+      fig up -d
+
 ## TODO
+* move data directory out ( into /archive/production ?)
+* tone console logging waaaaay down
+* finish verify/dump add to fig
 * install [nsenter](https://github.com/jpetazzo/nsenter) on `cantor`
 * python refactoring (modules)
-* finish verify/dump add to fig
 * second publish to Firebase
 * figure out restart strategy for capture
 * include ReadTEDNative.py -> CaptureTED1k.py in fig
