@@ -5,8 +5,8 @@ capture:
   build: .
   # command: python ReadTEDNative.py --forever --device /dev/ttyUSB0
   command: bash -c 'while true; do echo `date`; sleep 1; done'
-  # volumes:
-  #   - .:/src
+  volumes:
+   - data/:/data
 
 summarize:
   build: .
