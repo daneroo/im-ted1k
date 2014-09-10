@@ -3,10 +3,12 @@
 # sudo docker run -it --rm --privileged --name capture -v $(pwd):/data -v /dev/ttyUSB0:/dev/ttyUSB0 dockerfile/python
 capture:
   build: .
-  # command: python ReadTEDNative.py --forever --device /dev/ttyUSB0
-  command: bash -c 'while true; do echo `date`|tee -a /data/coco.txt; sleep 1; done'
+  command: python ReadTEDNative.py --forever --device /dev/ttyUSB0
+  # command: bash -c 'while true; do echo `date`|tee -a /data/coco.txt; sleep 1; done'
   volumes:
-   - data/:/data
+    - ./data:/data
+    - /dev/ttyUSB0:/dev/ttyUSB0
+  privileged: true
 
 summarize:
   build: .
