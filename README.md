@@ -8,7 +8,6 @@ Previous Notes in Evernote for now.
 * install [nsenter](https://github.com/jpetazzo/nsenter) on `cantor`
 * python refactoring (modules)
 * finish verify/dump add to fig
-* mv src to subfolder
 * second publish to Firebase
 * figure out restart strategy for capture
 * include ReadTEDNative.py -> CaptureTED1k.py in fig
@@ -16,6 +15,7 @@ Previous Notes in Evernote for now.
 
 [Editing files in a container (Samba)](https://groups.google.com/forum/#!topic/docker-user/UubYr7b4fMI)
 ### Done
+* mv src to subfolder
 * Cleanup unneeded src
 * Fix config for MYSQL: Summarize, monitor, publish
     * use 172.17.42.1:3306/ted (implicitly root@container)
