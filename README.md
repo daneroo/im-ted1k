@@ -12,6 +12,7 @@ Previous Notes in Evernote for now.
 * second publish to Firebase
 * figure out restart strategy for capture
 * include ReadTEDNative.py -> CaptureTED1k.py in fig
+    * Note move to https://github.com/scanlime/navi-misc/blob/master/python/ted.py
 
 [Editing files in a container (Samba)](https://groups.google.com/forum/#!topic/docker-user/UubYr7b4fMI)
 ### Done

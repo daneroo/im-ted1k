@@ -1,20 +1,23 @@
 # just a start... from the fig example page
+
+# sudo docker run -it --rm --privileged --name capture -v $(pwd):/data -v /dev/ttyUSB0:/dev/ttyUSB0 dockerfile/python
+capture:
+  build: .
+  # command: python ReadTEDNative.py --forever --device /dev/ttyUSB0
+  command: while true; do echo `date`; done
+  # volumes:
+  #   - .:/src
+
 summarize:
   build: .
   command: python Summarize.py --days 1 --forever
-  # volumes:
-  #   - .:/src
 
 monitor:
   build: .
   command: ./monitor.sh
-  # volumes:
-  #   - .:/src
 
 publish:
   # build: dockerfiles/php-cli
   build: .
   command: ./publish.sh
-  # volumes:
-  #   - .:/src
   

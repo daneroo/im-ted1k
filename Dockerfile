@@ -21,7 +21,7 @@ RUN \
 ENV PYTHONUNBUFFERED 1
 
 # Add our code (.dockerignore)
-ADD . /src
+ADD src /src
 
 # Define mountable directories.
 VOLUME ["/data"]
