@@ -45,11 +45,11 @@ class MySQL:
         return row[0]
 
     def tableExists(self,tablename):
-        exists = getScalar("show tables like '%s'" % tablename) is not None
+        exists = self.getScalar("show tables like '%s'" % tablename) is not None
         return exists
         
     def checkOrCreateTable(self,tablename):
-        exists = tableExists(tablename)
+        exists = self.tableExists(tablename)
         if exists:
                 logInfo(" Table %s is OK" % (tablename))
                 return
