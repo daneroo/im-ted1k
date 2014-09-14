@@ -17,15 +17,15 @@ on `cantor`:
 * move data directory out ( into /archive/production ?)
 * tone console logging waaaaay down
 * finish verify/dump add to fig
+* SIGTERM handling for Summary and shell [scripts monitor and publish](http://lists.gnu.org/archive/html/help-bash/2013-04/msg00062.html)
 * install [nsenter](https://github.com/jpetazzo/nsenter) on `cantor`
 * python refactoring (modules)
 * second publish to Firebase
 * figure out restart strategy for capture
-* include ReadTEDNative.py -> CaptureTED1k.py in fig
-    * Note move to https://github.com/scanlime/navi-misc/blob/master/python/ted.py
 
 [Editing files in a container (Samba)](https://groups.google.com/forum/#!topic/docker-user/UubYr7b4fMI)
 ### Done
+* SIGTERM Handler for capture
 * mv src to subfolder
 * Cleanup unneeded src
 * Fix config for MYSQL: Summarize, monitor, publish
@@ -33,6 +33,8 @@ on `cantor`:
     * works on cantor:guests because of GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION
     * works on boot2docker guests if mysql's port 3306 is redirected
     * default to aviso@172.17.42.1/ted for cantor:host
+* Include ReadTEDNative.py -> capture.py in fig
+    * Note move to https://github.com/scanlime/navi-misc/blob/master/python/ted.py
 
 ## Components
 
