@@ -22,9 +22,9 @@ from ted1k.mysql import MySQL
 
 
 def getGMTTimeWattsAndVoltsFromTedNative(packet):
-	ISO_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
-	#isodatestr = datetime.datetime.now().strftime(ISO_DATE_FORMAT) 
-	isodatestr = time.strftime(ISO_DATE_FORMAT,time.gmtime(time.time())) 
+    ISO_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
+    #isodatestr = datetime.datetime.now().strftime(ISO_DATE_FORMAT) 
+    isodatestr = time.strftime(ISO_DATE_FORMAT,time.gmtime(time.time())) 
 
     #print
     #print "%d byte packet: %r" % (len(packet.data), binascii.b2a_hex(packet.data))
