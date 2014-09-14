@@ -15,70 +15,42 @@ import math
 import getopt
 import datetime
 import time
-import MySQLdb
 from ted1k.logging import logInfo,logWarn,logError
 from ted1k.ted import TED
+from ted1k.mysql import MySQL
 # from ted1k.filer import Filer
 
-def tableExists(tablename):
-        exists = getScalar("show tables like '%s'" % tablename) is not None
-        return exists
-    
-def checkOrCreateTable(tablename):
-        exists = tableExists(tablename)
-        if exists:
-                logInfo(" Table %s is OK" % (tablename))
-                return
-
-        # I removed table dropping code (safety)
-
-        ddl = """CREATE TABLE %s (
-stamp datetime NOT NULL default '1970-01-01 00:00:00',
-watt int(11) NOT NULL default '0',
-PRIMARY KEY %sByStamp (stamp)
-);
-""" % (tablename,tablename)
-        cursor.execute(ddl)
-        logInfo(" Created %s table" % (tablename))
-
-def getScalar(sql):
-    cursor.execute(sql)
-    row = cursor.fetchone()
-    if row is None: return None
-    return row[0]
 
 def getGMTTimeWattsAndVoltsFromTedNative(packet):
 	ISO_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 	#isodatestr = datetime.datetime.now().strftime(ISO_DATE_FORMAT) 
 	isodatestr = time.strftime(ISO_DATE_FORMAT,time.gmtime(time.time())) 
 
-        #print
-        #print "%d byte packet: %r" % (len(packet.data), binascii.b2a_hex(packet.data))
-        #print
-        #for name, value in packet.fields.items():
-        #        print "%s = %s" % (name, value)
+    #print
+    #print "%d byte packet: %r" % (len(packet.data), binascii.b2a_hex(packet.data))
+    #print
+    #for name, value in packet.fields.items():
+    #        print "%s = %s" % (name, value)
 
-        kWattStr = packet.fields["kw"]
-        voltStr = packet.fields["volts"]
-        #print "%s\t%s\t%s" % (isodatestr, kWattStr, voltStr) 
-        watts = string.atof(kWattStr)*1000.0
-        volts  = string.atof(voltStr)
-        return (isodatestr , watts,volts)
+    kWattStr = packet.fields["kw"]
+    voltStr = packet.fields["volts"]
+    #print "%s\t%s\t%s" % (isodatestr, kWattStr, voltStr) 
+    watts = string.atof(kWattStr)*1000.0
+    volts  = string.atof(voltStr)
+    return (isodatestr , watts,volts)
 
 if __name__ == "__main__":
+
+        db = MySQL();
+
         usage = 'python %s  ( --duration <secs> | --forever) [--device /dev/ttyXXXX]' % sys.argv[0]
-        conn = MySQLdb.connect (host = "172.17.42.1", # host = "127.0.0.1",
-                                user = "aviso",
-                                passwd = "",
-                                db = "ted")
-        cursor = conn.cursor ()
         
         # tablenames: watt, ted_native
         # insert into BOTH tables
         tablenames=['watt','ted_native']
 
         for tablename in tablenames:
-                checkOrCreateTable(tablename);
+                db.checkOrCreateTable(tablename);
 
 
         # parse command line options
@@ -124,7 +96,7 @@ if __name__ == "__main__":
                                 sql = "INSERT IGNORE INTO %s (stamp, watt) VALUES ('%s', '%d')" % (
                                         tablename,stamp,watts)
                                 #print " exe: %s" % sql
-                                cursor.execute(sql)
+                                db.executeQuery(sql)
 
                 now=time.time()
                 if duration>0 and (now-start)>duration:
@@ -136,8 +108,4 @@ if __name__ == "__main__":
                 time.sleep(delay)
 
 print "Done; lasted %f" % (time.time()-start)
-
-
-cursor.close ()
-conn.close ()
 

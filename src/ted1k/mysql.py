@@ -36,6 +36,35 @@ class MySQL:
         cursor.close()
         return row
 
+    def getScalar(self,sql):
+        cursor = self.cursor()
+        cursor.execute(sql)
+        row = cursor.fetchone()
+        cursor.close()
+        if row is None: return None
+        return row[0]
+
+    def tableExists(self,tablename):
+        exists = getScalar("show tables like '%s'" % tablename) is not None
+        return exists
+        
+    def checkOrCreateTable(tablename):
+        exists = tableExists(tablename)
+        if exists:
+                logInfo(" Table %s is OK" % (tablename))
+                return
+
+        ddl = """CREATE TABLE %s (
+stamp datetime NOT NULL default '1970-01-01 00:00:00',
+watt int(11) NOT NULL default '0',
+PRIMARY KEY %sByStamp (stamp)
+);
+""" % (tablename,tablename)
+        cursor = self.cursor()
+        cursor.execute(ddl)
+        cursor.close()
+        logInfo(" Created %s table" % (tablename))
+
     # For use with with! Allows cleaning up the connection
     # Not yet tested
     def __enter__(self):
