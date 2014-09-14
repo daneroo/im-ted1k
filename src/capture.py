@@ -49,7 +49,9 @@ def sigterm_handler(signum, frame):
 
 if __name__ == "__main__":
 
+    # Install SIGTERM handler
     signal.signal(signal.SIGTERM, sigterm_handler)
+
     db = MySQL();
 
     usage = 'python %s  ( --duration <secs> | --forever) [--device /dev/ttyXXXX]' % sys.argv[0]

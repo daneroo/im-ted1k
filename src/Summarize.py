@@ -1,5 +1,6 @@
 import MySQLdb
 import sys
+import signal
 import time
 import math
 import getopt
@@ -224,8 +225,16 @@ def testStartOfPeriods():
         print "  Start of hour  : %s" % localTimeWithTZ(startOfHour(now))
         print "  Start of day   : %s" % localTimeWithTZ(startOfDay(now,0))
 
+# catch SIGTERM signal, So we can terminate gracefully (set global duration to 0)
+def sigterm_handler(signum, frame):
+    global duration
+    print 'Signal caught (%d): Exiting' % signum
+    duration=0
     
 if __name__ == "__main__":
+
+    # Install SIGTERM handler
+    signal.signal(signal.SIGTERM, sigterm_handler)
 
     #testStartOfPeriods()
     #sys.exit(0)
