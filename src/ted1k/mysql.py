@@ -1,4 +1,6 @@
 import MySQLdb
+from logging import logInfo,logWarn,logError
+
 
 # Config - Should inject variable from env, with defaults
 # the variable formats are from docker links
