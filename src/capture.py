@@ -10,6 +10,7 @@
 #
 
 import sys
+import signal
 import string
 import math
 import getopt
