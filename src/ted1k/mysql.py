@@ -48,7 +48,7 @@ class MySQL:
         exists = getScalar("show tables like '%s'" % tablename) is not None
         return exists
         
-    def checkOrCreateTable(tablename):
+    def checkOrCreateTable(self,tablename):
         exists = tableExists(tablename)
         if exists:
                 logInfo(" Table %s is OK" % (tablename))
