@@ -319,7 +319,7 @@ if __name__ == "__main__":
         conn.close()
 
         now=time.time()
-        if duration>0 and (now-loopstart)>duration:
+        if duration>=0 and (now-loopstart)>duration:
             break
         # sleep to hit the 10 second mark on the nose (+desiredOffest)
         # This is not working quite right... redo 10 second thing
