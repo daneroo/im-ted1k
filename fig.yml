@@ -1,6 +1,5 @@
 # just a start... from the fig example page
 
-# sudo docker run -it --rm --privileged --name capture -v $(pwd):/data -v /dev/ttyUSB0:/dev/ttyUSB0 dockerfile/python
 capture:
   build: .
   command: python capture.py --forever --device /hostdev/ttyUSB0
@@ -12,14 +11,13 @@ capture:
 
 summarize:
   build: .
-  command: python Summarize.py --days 1 --forever
+  command: python summarize.py --days 1 --forever
 
 monitor:
   build: .
   command: ./monitor.sh
 
 publish:
-  # build: dockerfiles/php-cli
   build: .
   command: ./publish.sh
   
