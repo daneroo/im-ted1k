@@ -26,11 +26,12 @@ def getGMTTimeWattsAndVoltsFromTedNative(packet):
     #isodatestr = datetime.datetime.now().strftime(ISO_DATE_FORMAT) 
     isodatestr = time.strftime(ISO_DATE_FORMAT,time.gmtime(time.time())) 
 
-    #print
-    #print "%d byte packet: %r" % (len(packet.data), binascii.b2a_hex(packet.data))
-    #print
     #for name, value in packet.fields.items():
     #        print "%s = %s" % (name, value)
+    # -- kw_rate = 0.054
+    # -- volts = 122.0
+    # -- house_code = 211
+    # -- kw = 1.0
 
     kWattStr = packet.fields["kw"]
     voltStr = packet.fields["volts"]
@@ -41,71 +42,70 @@ def getGMTTimeWattsAndVoltsFromTedNative(packet):
 
 if __name__ == "__main__":
 
-        db = MySQL();
+    db = MySQL();
 
-        usage = 'python %s  ( --duration <secs> | --forever) [--device /dev/ttyXXXX]' % sys.argv[0]
-        
-        # tablenames: watt, ted_native
-        # insert into BOTH tables
-        tablenames=['watt','ted_native']
+    usage = 'python %s  ( --duration <secs> | --forever) [--device /dev/ttyXXXX]' % sys.argv[0]
+    
+    # tablenames: watt, ted_native
+    # insert into BOTH tables
+    tablenames=['watt','ted_native']
 
-        for tablename in tablenames:
-                db.checkOrCreateTable(tablename);
+    for tablename in tablenames:
+        db.checkOrCreateTable(tablename);
 
+    # parse command line options
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "", ["duration=", "forever", "device="])
+    except getopt.error, msg:
+        logError('error msg: %s' % msg)
+        logError(usage)
+        sys.exit(2)
 
-        # parse command line options
-        try:
-                opts, args = getopt.getopt(sys.argv[1:], "", ["duration=", "forever", "device="])
-        except getopt.error, msg:
-                logError('error msg: %s' % msg)
-                logError(usage)
-                sys.exit(2)
+    # default value (forever -> duration=-1
+    duration=-1
+    #default value /dev/ttyUSB0
+    device = "/dev/ttyUSB0"
 
-        # default value (forever-> duration=-1
-        duration=1
-        #default value /dev/ttyUSB0
-        device = "/dev/ttyUSB0"
+    for o, a in opts:
+        if o == "--duration":
+            duration = string.atol(a)
+        elif o == "--forever":
+            duration = -1
+        elif o == "--device":
+            device = a
 
-        for o, a in opts:
-                if o == "--duration":
-                        duration = string.atol(a)
-                elif o == "--forever":
-                        duration = -1
-                elif o == "--device":
-                        device = a
+    print "duration is %d" % duration
+    start = time.time()
 
-        print "duration is %d" % duration
-        start = time.time()
+    print "Instantiating TED object using device: %s" % device
+    tedObject = TED(device)
 
-        print "Instantiating TED object using device: %s" % device
-        tedObject = TED(device)
+    
+    while True:
+        datetimenow = datetime.datetime.now()
+        now=time.time()
+        if duration>0 and (now-start)>duration:
+            break
 
-        
-        while True:
-                datetimenow = datetime.datetime.now()
-                now=time.time()
-                if duration>0 and (now-start)>duration:
-                        break
+        for packet in tedObject.poll():
+            (stamp, watts,volts) = getGMTTimeWattsAndVoltsFromTedNative(packet)
+            print "%s --- %s\t%d\t%.1f" % (datetimenow,stamp, watts, volts) 
 
-                for packet in tedObject.poll():
-                        (stamp, watts,volts) = getGMTTimeWattsAndVoltsFromTedNative(packet)
-                        print "%s --- %s\t%d\t%.1f" % (datetimenow,stamp, watts, volts) 
+            # insert into BOTH tables
+            for tablename in tablenames:
+                sql = "INSERT IGNORE INTO %s (stamp, watt) VALUES ('%s', '%d')" % (
+                        tablename,stamp,watts)
+                #print " exe: %s" % sql
+                db.executeQuery(sql)
 
-                        # insert into BOTH tables
-                        for tablename in tablenames:
-                                sql = "INSERT IGNORE INTO %s (stamp, watt) VALUES ('%s', '%d')" % (
-                                        tablename,stamp,watts)
-                                #print " exe: %s" % sql
-                                db.executeQuery(sql)
-
-                now=time.time()
-                if duration>0 and (now-start)>duration:
-                        break
-                # sleep to hit the second on the nose:
-                (frac,dummy) = math.modf(now)
-                desiredFractionalOffset = .1
-                delay = 1-frac + desiredFractionalOffset
-                time.sleep(delay)
+        now=time.time()
+        if duration>0 and (now-start)>duration:
+                break
+        # sleep to hit the second on the nose:
+        (frac,dummy) = math.modf(now)
+        desiredFractionalOffset = .1
+        delay = 1-frac + desiredFractionalOffset
+        time.sleep(delay)
 
 print "Done; lasted %f" % (time.time()-start)
 

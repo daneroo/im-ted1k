@@ -1,4 +1,5 @@
 import MySQLdb
+# logging is inside our package (ted1k),
 from logging import logInfo,logWarn,logError
 
 
