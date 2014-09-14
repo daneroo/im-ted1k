@@ -40,8 +40,15 @@ def getGMTTimeWattsAndVoltsFromTedNative(packet):
     volts  = string.atof(voltStr)
     return (isodatestr , watts,volts)
 
+# catch SIGTERM signal, So we can terminate gracefully (set global duration to 0)
+def sigterm_handler(signum, frame):
+    global duration
+    print 'Signal caught (%d): Exiting' % signum
+    duration=0
+
 if __name__ == "__main__":
 
+    signal.signal(signal.SIGTERM, sigterm_handler)
     db = MySQL();
 
     usage = 'python %s  ( --duration <secs> | --forever) [--device /dev/ttyXXXX]' % sys.argv[0]
@@ -84,7 +91,7 @@ if __name__ == "__main__":
     while True:
         datetimenow = datetime.datetime.now()
         now=time.time()
-        if duration>0 and (now-start)>duration:
+        if duration>=0 and (now-start)>duration:
             break
 
         for packet in tedObject.poll():
