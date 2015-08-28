@@ -6,7 +6,7 @@
 
 # Pull base image.
 # FROM dockerfile/python
-FROM python
+FROM python:2.7
 
 # Install Python.
 RUN \
