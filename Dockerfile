@@ -5,7 +5,8 @@
 #
 
 # Pull base image.
-FROM dockerfile/python
+# FROM dockerfile/python
+FROM python
 
 # Install Python.
 RUN \
