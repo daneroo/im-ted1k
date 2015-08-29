@@ -25,13 +25,15 @@ ENV PYTHONUNBUFFERED 1
 # Add our code (.dockerignore)
 ADD src /src
 
-RUN pip install --no-cache-dir -r requirements.txt
+# Define working directory.
+WORKDIR /src
+
+# Install python packages (relative to WORKDIR)
+RUN \
+  pip install --no-cache-dir -r requirements.txt
 
 # Define mountable directories.
 VOLUME ["/data"]
-
-# Define working directory.
-WORKDIR /src
 
 # Define default command.
 CMD ["bash"]
