@@ -53,6 +53,8 @@ on `cantor`:
 * Use of docker-compose (previously fig) 
 * (directory layout)
 
+### Single command (verify/dump)
+
 Run a single command, and attach data volume, e.g.:
 
     docker run -it --rm  -v $(pwd)/data:/data imted1k_monitor bash
