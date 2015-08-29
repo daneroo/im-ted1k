@@ -5,13 +5,14 @@
 #
 
 # Pull base image.
+# Now using pip/requirements not ubuntu packages for python: 
 # FROM dockerfile/python
 FROM python:2.7
 
 # Install Python.
 RUN \
   apt-get update && \
-  DEBIAN_FRONTEND=noninteractive apt-get install -y python-mysqldb python-serial mysql-client php5-cli php5-mysql
+  DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-client php5-cli php5-mysql
 
 # Set timezone 
 RUN \ 
@@ -23,6 +24,8 @@ ENV PYTHONUNBUFFERED 1
 
 # Add our code (.dockerignore)
 ADD src /src
+
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Define mountable directories.
 VOLUME ["/data"]
