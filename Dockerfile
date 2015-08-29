@@ -1,7 +1,7 @@
 #
-# Python Dockerfile
-#
-# https://github.com/dockerfile/python
+# ted1k Docker image shared by all containers (php,python,shell scripts)
+# Use official docker python image
+#  https://hub.docker.com/_/python/
 #
 
 # Pull base image.

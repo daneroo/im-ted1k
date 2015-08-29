@@ -1,4 +1,4 @@
-# just a start... from the fig example page
+# ted1k Docker image shared by all containers (php,python,shell scripts)
 
 capture:
   build: .

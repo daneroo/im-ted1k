@@ -1,27 +1,32 @@
 # iMetrical-Energy TED1K
 
-As I rebuild cantor, and wanting to preserve data capture, I decided to consolidate som previous code. We are going to [Docker](https://www.docker.com/)ize the components.
+As I rebuild cantor, and wanting to preserve data capture, I decided to consolidate som previous code. We are going to [Docker](https://www.docker.com/)ize all the things.
 
 Previous Notes in Evernote for now. 
+
+###Notes:
+* The database is still run on the HOST: 172.17.42.1:3306/ted
+* Cron restarts the containers every 4 hours 
 
 ## Operation
 on `cantor`:
 
       cd im-ted1k
       # build (move `./data/` out of way ?)
-      fig build
+      docker-compose build
       # run
-      fig up -d
+      docker-compose up -d
+
+
 
 ## TODO
+* finish verify/dump add to compose
+* ttyusb discovery : instead of `/hostdev/ttyUSB0`
 * move data directory out ( into /archive/production ?)
 * tone console logging waaaaay down
-* finish verify/dump add to fig
 * SIGTERM handling for Summary and shell [scripts monitor and publish](http://lists.gnu.org/archive/html/help-bash/2013-04/msg00062.html)
-* install [nsenter](https://github.com/jpetazzo/nsenter) on `cantor`
+* version specifier in requirements.txt (use ~= x.y instead of == x.y.z)
 * python refactoring (modules)
-* second publish to Firebase
-* figure out restart strategy for capture
 
 [Editing files in a container (Samba)](https://groups.google.com/forum/#!topic/docker-user/UubYr7b4fMI)
 ### Done
@@ -33,7 +38,7 @@ on `cantor`:
     * works on cantor:guests because of GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION
     * works on boot2docker guests if mysql's port 3306 is redirected
     * default to aviso@172.17.42.1/ted for cantor:host
-* Include ReadTEDNative.py -> capture.py in fig
+* Include ReadTEDNative.py -> capture.py in docker-compose
     * Note move to https://github.com/scanlime/navi-misc/blob/master/python/ted.py
 
 ## Components
@@ -45,7 +50,7 @@ on `cantor`:
 
 ## Docker
 
-* Use of fig : install 0.5.2 as root on cantor
+* Use of docker-compose (previously fig) 
 * (directory layout)
 
 Run a single command, and attach data volume, e.g.:
