@@ -38,6 +38,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	raw = raw[:n]
 	log.Printf("raw: n:%d raw[:n]:%q", n, raw[:n])
 
 	decoded := make([]byte, 0)
