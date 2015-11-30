@@ -5,6 +5,7 @@ As I rebuild cantor, and wanting to preserve data capture, I decided to consolid
 Previous Notes in Evernote for now. 
 
 ###Notes:
+* HOST IP changed from 172.17.42.1 to 172.17.0.1
 * The database is still run on the HOST: 172.17.42.1:3306/ted
 * Cron restarts the containers every 4 hours 
 
