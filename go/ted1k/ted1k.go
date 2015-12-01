@@ -1,4 +1,4 @@
-package main
+package ted1k
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ const ESCAPE byte = 0x10
 const PKT_BEGIN byte = 0x04
 const PKT_END byte = 0x03
 
-func main() {
+func Doit() {
 	log.Printf("const PKT_REQUEST: %q", PKT_REQUEST)
 	log.Printf("const ESCAPE: %x", ESCAPE)
 	log.Printf("const PKT_BEGIN: %x", PKT_BEGIN)
