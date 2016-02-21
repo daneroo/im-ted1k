@@ -104,7 +104,7 @@ if __name__ == "__main__":
             for tablename in tablenames:
                 sql = "INSERT IGNORE INTO %s (stamp, watt) VALUES ('%s', '%d')" % (
                         tablename,stamp,watts)
-                #print " exe: %s" % sql
+                print " exec: %s" % sql
                 db.executeQuery(sql)
 
         now=time.time()
