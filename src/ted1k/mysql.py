@@ -5,7 +5,8 @@ from logging import logInfo,logWarn,logError
 
 # Config - Should inject variable from env, with defaults
 # the variable formats are from docker links
-MYSQL_PORT_3306_TCP_ADDR = '172.17.0.1'
+# now using the docker-compose name: teddb
+MYSQL_PORT_3306_TCP_ADDR = 'teddb'
 # MYSQL_PORT_3306_TCP_PORT = '3306'
 MYSQL_ENV_MYSQL_DATABASE = 'ted'
 

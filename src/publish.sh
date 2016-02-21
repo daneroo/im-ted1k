@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #simulate docker env linking for cantor's host mysql instance
-MYSQL_PORT_3306_TCP_ADDR='172.17.0.1'
+# now using the docker-compose name: teddb
+MYSQL_PORT_3306_TCP_ADDR='teddb'
 MYSQL_PORT_3306_TCP_PORT='3306'
 MYSQL_ENV_MYSQL_DATABASE='ted'
 

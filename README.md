@@ -1,22 +1,46 @@
 # iMetrical-Energy TED1K
 
+## 2016-02-20 moving to raspberry pi
+
+Other/Previous [Notes in Evernote](https://www.evernote.com/shard/s60/nl/1773032759/ae1b9921-7e85-4b75-a21b-86be7d524295/). 
+
+## Operation
+on `pi@pi`:
+
+      cd Code/iMetrical/im-ted1k
+      # build (move `./data/` out of way ?)
+      docker-compose build
+      # run
+      docker-compose up -d
+
+
+-Minimal changes, mysql will also be in docker
+    -add ssh key pi@pi for github
+    -Dockerfile from hypriot/rpi-python
+
+    -add teddb mysql server and config in docker-compose
+    -so teddb is now the hostname instead of 172.17.0.1   
+    -mysql data volume in ./data/mysql; later in /data/ted/mysql
+
+## TODO
+-Restore (at least 2016-.. into database frm last cantor snapshot (and other all day tables?))
+-Should run as another user (mysql creds?)
+-Ability to move volume easily; i.e. another disk
+-Will do incremental dumps to .jsonl.gz files
+-Will eventually write to .jsonl file concurrently
+-Will eventually port to go and consolidate parts
+-Makefile and Dockerfile(s) in go directory
+
+###Notes:
+
+## Rebuild cantor
 As I rebuild cantor, and wanting to preserve data capture, I decided to consolidate som previous code. We are going to [Docker](https://www.docker.com/)ize all the things.
 
-Previous Notes in Evernote for now. 
 
 ###Notes:
 * HOST IP changed from 172.17.42.1 to 172.17.0.1
 * The database is still run on the HOST: 172.17.42.1:3306/ted
 * Cron restarts the containers every 4 hours 
-
-## Operation
-on `cantor`:
-
-      cd im-ted1k
-      # build (move `./data/` out of way ?)
-      docker-compose build
-      # run
-      docker-compose up -d
 
 
 

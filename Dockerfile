@@ -6,8 +6,8 @@
 
 # Pull base image.
 # Now using pip/requirements not ubuntu packages for python: 
-# FROM dockerfile/python
-FROM python:2.7
+# FROM python:2.7
+FROM hypriot/rpi-python
 
 # Install Python.
 RUN \

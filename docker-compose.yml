@@ -1,11 +1,30 @@
 # ted1k Docker image shared by all containers (php,python,shell scripts)
 
+teddb:
+  image: hypriot/rpi-mysql
+
+  ports:
+    - "3306:3306"
+
+  volumes:
+    - ./data/mysql:/var/lib/mysql
+    # if we wanted it on another disk
+    # - /data/ted/data:/var/lib/mysql
+
+  environment:
+    MYSQL_DATABASE: ted
+    MYSQL_ALLOW_EMPTY_PASSWORD: yes
+    # MYSQL_ROOT_PASSWORD:
+    # MYSQL_USER:
+    # MYSQL_PASSWORD:
+
 capture:
   build: .
   command: python capture.py --forever --device /hostdev/ttyUSB0
   # command: bash -c 'while true; do echo `date`|tee -a /data/coco.txt; sleep 1; done'
   volumes:
-    - ./data:/data
+    # not used yet
+    - ./data/jsonl:/data/jsonl
     - /dev:/hostdev
   privileged: true
 
