@@ -56,9 +56,8 @@ if __name__ == "__main__":
 
     usage = 'python %s  ( --duration <secs> | --forever) [--device /dev/ttyXXXX]' % sys.argv[0]
     
-    # tablenames: watt, ted_native
-    # insert into BOTH tables
-    tablenames=['watt','ted_native']
+    # insert into watt table only (used to write to ted_native as well)
+    tablenames=['watt']  # ,'ted_native'
 
     for tablename in tablenames:
         db.checkOrCreateTable(tablename);
@@ -101,7 +100,7 @@ if __name__ == "__main__":
             (stamp, watts,volts) = getGMTTimeWattsAndVoltsFromTedNative(packet)
             print "%s --- %s\t%d\t%.1f" % (datetimenow,stamp, watts, volts) 
 
-            # insert into BOTH tables
+            # insert into watt table only (used to write to ted_native as well)
             for tablename in tablenames:
                 sql = "INSERT IGNORE INTO %s (stamp, watt) VALUES ('%s', '%d')" % (
                         tablename,stamp,watts)
