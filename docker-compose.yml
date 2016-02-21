@@ -13,7 +13,7 @@ teddb:
 
   environment:
     MYSQL_DATABASE: ted
-    MYSQL_ALLOW_EMPTY_PASSWORD: yes
+    MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
     # MYSQL_ROOT_PASSWORD:
     # MYSQL_USER:
     # MYSQL_PASSWORD:
@@ -23,8 +23,8 @@ capture:
   command: python capture.py --forever --device /hostdev/ttyUSB0
   # command: bash -c 'while true; do echo `date`|tee -a /data/coco.txt; sleep 1; done'
   volumes:
-    # not used yet
-    - ./data/jsonl:/data/jsonl
+    # not used yet : /data/jsonl
+    - ./data:/data
     - /dev:/hostdev
   privileged: true
 

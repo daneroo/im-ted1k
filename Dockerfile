@@ -9,15 +9,19 @@
 # FROM python:2.7
 FROM hypriot/rpi-python
 
-# Install Python.
-RUN \
-  apt-get update && \
-  DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-client php5-cli php5-mysql
-
 # Set timezone 
 RUN \ 
   echo 'America/Montreal'  > /etc/timezone && \
   dpkg-reconfigure --frontend noninteractive tzdata
+
+# Install Python.
+RUN \
+  apt-get update && \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y \
+  	mysql-client \
+  	php5-cli \
+  	php5-mysql
+
 
 # Force stdin, stdout and stderr to be totally unbuffered
 ENV PYTHONUNBUFFERED 1
@@ -30,7 +34,7 @@ WORKDIR /src
 
 # Install python packages (relative to WORKDIR)
 RUN \
-  pip install --no-cache-dir -r requirements.txt
+  pip install -r requirements.txt
 
 # Define mountable directories.
 VOLUME ["/data"]
