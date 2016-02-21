@@ -31,7 +31,7 @@ class MySQL:
         cursor.execute(query)
         rows = cursor.fetchall()
         cursor.close()
-        self.conn.comit()
+        self.conn.commit()
         return rows
 
     def getOneRow(self,sql):
