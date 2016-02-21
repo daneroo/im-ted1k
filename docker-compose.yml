@@ -22,6 +22,8 @@ capture:
   build: .
   command: python capture.py --forever --device /hostdev/ttyUSB0
   # command: bash -c 'while true; do echo `date`|tee -a /data/coco.txt; sleep 1; done'
+  links:
+    - teddb
   volumes:
     # not used yet : /data/jsonl
     - ./data:/data
@@ -31,12 +33,18 @@ capture:
 summarize:
   build: .
   command: python summarize.py --days 1 --forever
+  links:
+    - teddb
 
 monitor:
   build: .
   command: ./monitor.sh
+  links:
+    - teddb
 
 publish:
   build: .
   command: ./publish.sh
+  links:
+    - teddb
   
