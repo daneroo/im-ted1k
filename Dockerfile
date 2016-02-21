@@ -30,7 +30,7 @@ ADD src/requirements.txt /src/requirements.txt
 
 # Install python packages (relative to WORKDIR)
 RUN \
-  pip install -r requirements.txt
+  pip install -r /src/requirements.txt
 
 # Force stdin, stdout and stderr to be totally unbuffered
 ENV PYTHONUNBUFFERED 1
