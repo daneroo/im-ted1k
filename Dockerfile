@@ -14,13 +14,16 @@ RUN \
   echo 'America/Montreal'  > /etc/timezone && \
   dpkg-reconfigure --frontend noninteractive tzdata
 
-# Install Python.
+# Install Python Dependacies (non pip)
 RUN \
   apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y \
-  	mysql-client \
-  	php5-cli \
-  	php5-mysql
+	build-essential \
+	libmysqlclient-dev \
+	mysql-client \
+	php5-cli \
+	php5-mysql \
+	python-dev
 
 
 # Force stdin, stdout and stderr to be totally unbuffered
