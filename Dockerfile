@@ -18,8 +18,8 @@ RUN \
 RUN \
   apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y \
-  	mysql-client \
   	libmysqlclient-dev \
+  	mysql-client \
   	php5-cli \
   	php5-mysql
 
