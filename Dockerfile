@@ -25,6 +25,12 @@ RUN \
 	php5-mysql \
 	python-dev
 
+# Add our pip dependancy file
+ADD src/requirements.txt /src/requirements.txt
+
+# Install python packages (relative to WORKDIR)
+RUN \
+  pip install -r requirements.txt
 
 # Force stdin, stdout and stderr to be totally unbuffered
 ENV PYTHONUNBUFFERED 1
@@ -34,10 +40,6 @@ ADD src /src
 
 # Define working directory.
 WORKDIR /src
-
-# Install python packages (relative to WORKDIR)
-RUN \
-  pip install -r requirements.txt
 
 # Define mountable directories.
 VOLUME ["/data"]
