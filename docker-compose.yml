@@ -1,7 +1,7 @@
 # ted1k Docker image shared by all containers (php,python,shell scripts)
 
 teddb:
-  image: hypriot/rpi-mysql
+  image: mysql
   restart: unless-stopped
   ports:
     - "3306:3306"
