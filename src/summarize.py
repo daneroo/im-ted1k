@@ -14,6 +14,7 @@ from scalr import logInfo,logWarn,logError
 MYSQL_PORT_3306_TCP_ADDR = 'teddb'
 # MYSQL_PORT_3306_TCP_PORT = '3306'
 MYSQL_ENV_MYSQL_DATABASE = 'ted'
+LOOP_PERIOD_SECONDS = 30
 
 # args --drop --start,... --mysqldb --update (select >current (+ offset))
 ##     So Here is the flow
@@ -323,7 +324,7 @@ if __name__ == "__main__":
         # This is not working quite right... redo 10 second thing
         (frac,dummy) = math.modf(now)
         desiredFractionalOffset = .2
-        delay = 10-frac + desiredFractionalOffset
+        delay = LOOP_PERIOD_SECONDS - frac + desiredFractionalOffset
         print "delay is :%f" %delay
         time.sleep(delay)
    

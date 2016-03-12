@@ -4,6 +4,7 @@
 MYSQL_PORT_3306_TCP_ADDR='teddb'
 MYSQL_PORT_3306_TCP_PORT='3306'
 MYSQL_ENV_MYSQL_DATABASE='ted'
+LOOP_PERIOD_SECONDS=30
 
 unset sleepPID
 trap 'echo TERMinated; kill $sleepPID; exit' TERM
@@ -15,5 +16,5 @@ while true; do
   done;
   date -u +"- %Y-%m-%d %H:%M:%S     UTC now"
 
-  sleep 9 & sleepPID=$!; wait
+  sleep ${LOOP_PERIOD_SECONDS} & sleepPID=$!; wait
 done
