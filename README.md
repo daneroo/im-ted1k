@@ -1,5 +1,7 @@
 # iMetrical-Energy TED1K
 
+## 2016-03-12 Moving back to x86 (euler, old cantor/goedel)
+
 ## 2016-02-20 moving to raspberry pi
 
 Other/Previous [Notes in Evernote](https://www.evernote.com/shard/s60/nl/1773032759/ae1b9921-7e85-4b75-a21b-86be7d524295/). 
