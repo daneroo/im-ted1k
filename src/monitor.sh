@@ -15,8 +15,8 @@ while true; do
     STMP_WTT=`${MYCMD} -N -B -e "select watt,watt*24/1000,concat(stamp,' UTC') from $i order by stamp desc limit 1"`
     printf "  latest %12s:  %s\n"  $i "${STMP_WTT}";
   done;
-  printf "  NOW %55s UTC\n" "`date -u +'%Y-%m-%d %H:%M:%S'`"
-  printf "  NOW %59s\n" "`date +'%Y-%m-%d %H:%M:%S %Z'`"
+  printf "  NOW %53s UTC\n" "`date -u +'%Y-%m-%d %H:%M:%S'`"
+  printf "  NOW %57s\n" "`date +'%Y-%m-%d %H:%M:%S %Z'`"
   
   # Per day counts
   ${MYCMD} -e 'select left(stamp,10) as perday,count(*) from watt where stamp>DATE_SUB(NOW(), INTERVAL 7 day) group by perday';
