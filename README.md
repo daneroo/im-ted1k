@@ -1,6 +1,13 @@
 # iMetrical-Energy TED1K
 
-## 2016-03-12 Moving back to x86 (euler, old cantor/goedel)
+_2016-09-17 Adjusted monitoring and docker-compose v2_  
+_2016-03-12 Moving back to x86 (euler, old cantor/goedel)_ 
+
+## To run
+
+
+    docker-compose build
+    docker-compose up -d
 
 ## 2016-02-20 moving to raspberry pi
 

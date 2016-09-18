@@ -1,54 +1,69 @@
 # ted1k Docker image shared by all containers (php,python,shell scripts)
+version: '2'
+services:
 
-teddb:
-  image: mysql
-  restart: unless-stopped
-  ports:
-    - "3306:3306"
+  teddb:
+    image: mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: ted
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
 
-  volumes:
-    - ./data/mysql:/var/lib/mysql
-    # if we wanted it on another disk
-    # - /data/ted/data:/var/lib/mysql
+  capture:
+    build: .
+    restart: unless-stopped
+    command: python capture.py --forever --device /hostdev/ttyUSB0
+    # command: bash -c 'while true; do echo `date`|tee -a /data/coco.txt; sleep 1; done'
+    links:
+      - teddb
+    volumes:
+      # not used yet : /data/jsonl
+      - ./data:/data
+      - /dev:/hostdev
+    privileged: true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
 
-  environment:
-    MYSQL_DATABASE: ted
-    MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
-    # MYSQL_ROOT_PASSWORD:
-    # MYSQL_USER:
-    # MYSQL_PASSWORD:
+  summarize:
+    build: .
+    restart: unless-stopped
+    command: python summarize.py --days 1 --forever
+    links:
+      - teddb
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
 
-capture:
-  build: .
-  restart: unless-stopped
-  command: python capture.py --forever --device /hostdev/ttyUSB0
-  # command: bash -c 'while true; do echo `date`|tee -a /data/coco.txt; sleep 1; done'
-  links:
-    - teddb
-  volumes:
-    # not used yet : /data/jsonl
-    - ./data:/data
-    - /dev:/hostdev
-  privileged: true
+  monitor:
+    build: .
+    restart: unless-stopped
+    command: ./monitor.sh
+    links:
+      - teddb
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
 
-summarize:
-  build: .
-  restart: unless-stopped
-  command: python summarize.py --days 1 --forever
-  links:
-    - teddb
-
-monitor:
-  build: .
-  restart: unless-stopped
-  command: ./monitor.sh
-  links:
-    - teddb
-
-publish:
-  build: .
-  restart: unless-stopped
-  command: ./publish.sh
-  links:
-    - teddb
-  
+  publish:
+    build: .
+    restart: unless-stopped
+    command: ./publish.sh
+    links:
+      - teddb
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+    
