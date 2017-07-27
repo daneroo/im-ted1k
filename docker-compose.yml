@@ -15,7 +15,7 @@ services:
     logging:
       driver: json-file
       options:
-        max-size: "10m"
+        max-size: "2m"
 
   capture:
     build: .
@@ -32,7 +32,7 @@ services:
     logging:
       driver: json-file
       options:
-        max-size: "10m"
+        max-size: "2m"
 
   summarize:
     build: .
@@ -43,7 +43,7 @@ services:
     logging:
       driver: json-file
       options:
-        max-size: "10m"
+        max-size: "2m"
 
   monitor:
     build: .
@@ -54,7 +54,7 @@ services:
     logging:
       driver: json-file
       options:
-        max-size: "10m"
+        max-size: "2m"
 
   publish:
     build: .
@@ -65,5 +65,5 @@ services:
     logging:
       driver: json-file
       options:
-        max-size: "10m"
+        max-size: "2m"
     
