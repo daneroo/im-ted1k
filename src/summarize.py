@@ -10,9 +10,11 @@ import datetime
 from scalr import logInfo,logWarn,logError
 
 # Config
-MYSQL_PORT_3306_TCP_ADDR = '172.17.0.1'
+# now using the docker-compose name: teddb
+MYSQL_PORT_3306_TCP_ADDR = 'teddb'
 # MYSQL_PORT_3306_TCP_PORT = '3306'
 MYSQL_ENV_MYSQL_DATABASE = 'ted'
+LOOP_PERIOD_SECONDS = 30
 
 # args --drop --start,... --mysqldb --update (select >current (+ offset))
 ##     So Here is the flow
@@ -263,8 +265,6 @@ if __name__ == "__main__":
             days = string.atol(a)
 
     # Check tables once
-    # conn = MySQLdb.connect (host="127.0.0.1",user="aviso",passwd="",db="ted")
-    # conn = MySQLdb.connect (host = "172.17.0.1",user="aviso",passwd="",db="ted")
     conn = MySQLdb.connect (host = MYSQL_PORT_3306_TCP_ADDR,db=MYSQL_ENV_MYSQL_DATABASE)
     cursor = conn.cursor ()
 
@@ -287,7 +287,6 @@ if __name__ == "__main__":
         
         #---------------loop
         # conn = MySQLdb.connect (host="127.0.0.1",user="aviso",passwd="",db="ted")
-        # conn = MySQLdb.connect (host = "172.17.0.1",user="aviso",passwd="",db="ted")
         conn = MySQLdb.connect (host = MYSQL_PORT_3306_TCP_ADDR,db=MYSQL_ENV_MYSQL_DATABASE)
         cursor = conn.cursor ()
 
@@ -325,7 +324,7 @@ if __name__ == "__main__":
         # This is not working quite right... redo 10 second thing
         (frac,dummy) = math.modf(now)
         desiredFractionalOffset = .2
-        delay = 10-frac + desiredFractionalOffset
+        delay = LOOP_PERIOD_SECONDS - frac + desiredFractionalOffset
         print "delay is :%f" %delay
         time.sleep(delay)
    

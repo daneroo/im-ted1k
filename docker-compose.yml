@@ -1,23 +1,69 @@
 # ted1k Docker image shared by all containers (php,python,shell scripts)
+version: '2'
+services:
 
-capture:
-  build: .
-  command: python capture.py --forever --device /hostdev/ttyUSB0
-  # command: bash -c 'while true; do echo `date`|tee -a /data/coco.txt; sleep 1; done'
-  volumes:
-    - ./data:/data
-    - /dev:/hostdev
-  privileged: true
+  teddb:
+    image: mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: ted
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+    logging:
+      driver: json-file
+      options:
+        max-size: "2m"
 
-summarize:
-  build: .
-  command: python summarize.py --days 1 --forever
+  capture:
+    build: .
+    restart: unless-stopped
+    command: python capture.py --forever --device /hostdev/ttyUSB0
+    # command: bash -c 'while true; do echo `date`|tee -a /data/coco.txt; sleep 1; done'
+    links:
+      - teddb
+    volumes:
+      # not used yet : /data/jsonl
+      - ./data:/data
+      - /dev:/hostdev
+    privileged: true
+    logging:
+      driver: json-file
+      options:
+        max-size: "2m"
 
-monitor:
-  build: .
-  command: ./monitor.sh
+  summarize:
+    build: .
+    restart: unless-stopped
+    command: python summarize.py --days 1 --forever
+    links:
+      - teddb
+    logging:
+      driver: json-file
+      options:
+        max-size: "2m"
 
-publish:
-  build: .
-  command: ./publish.sh
-  
+  monitor:
+    build: .
+    restart: unless-stopped
+    command: ./monitor.sh
+    links:
+      - teddb
+    logging:
+      driver: json-file
+      options:
+        max-size: "2m"
+
+  publish:
+    build: .
+    restart: unless-stopped
+    command: ./publish.sh
+    links:
+      - teddb
+    logging:
+      driver: json-file
+      options:
+        max-size: "2m"
+    

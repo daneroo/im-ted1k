@@ -1,22 +1,68 @@
 # iMetrical-Energy TED1K
 
+_2016-09-17 Adjusted monitoring and docker-compose v2_  
+_2016-03-12 Moving back to x86 (euler, old cantor/goedel)_ 
+_We lost data from ( 2016-02-14 21:24:21 , 2016-03-12 06:35:35 ]_
+
+## Backups
+We backup ted.watt table, compress and send to shannon:/archive/mirror/ted for Crashplan
+```
+# on euler - in docker: ~4m12s
+time docker exec -it imted1k_teddb_1 mysqldump --opt ted watt >ted.watt.`date -u +%Y%m%d.%H%MZ`.sql
+```
+Now archive it: ~3m23s
+```
+time bzip2 ted.watt.*.sql
+scp -p ted.watt.*.sql.bz2 shannon:/Volumes/Space/archive/mirror/ted
+```
+
+## To run
+```
+docker-compose build
+docker-compose up -d
+```
+
+## 2016-02-20 moving to raspberry pi
+
+Other/Previous [Notes in Evernote](https://www.evernote.com/shard/s60/nl/1773032759/ae1b9921-7e85-4b75-a21b-86be7d524295/). 
+
+## Operation
+on `pi@pi`:
+
+      cd Code/iMetrical/im-ted1k
+      # build (move `./data/` out of way ?)
+      docker-compose build
+      # run
+      docker-compose up -d
+
+
+-Minimal changes, mysql will also be in docker
+    -add ssh key pi@pi for github
+    -Dockerfile from hypriot/rpi-python
+
+    -add teddb mysql server and config in docker-compose
+    -so teddb is now the hostname instead of 172.17.0.1   
+    -mysql data volume in ./data/mysql; later in /data/ted/mysql
+
+## TODO
+-Restore (at least 2016-.. into database frm last cantor snapshot (and other all day tables?))
+-Should run as another user (mysql creds?)
+-Ability to move volume easily; i.e. another disk
+-Will do incremental dumps to .jsonl.gz files
+-Will eventually write to .jsonl file concurrently
+-Will eventually port to go and consolidate parts
+-Makefile and Dockerfile(s) in go directory
+
+###Notes:
+
+## Rebuild cantor
 As I rebuild cantor, and wanting to preserve data capture, I decided to consolidate som previous code. We are going to [Docker](https://www.docker.com/)ize all the things.
 
-Previous Notes in Evernote for now. 
 
 ###Notes:
 * HOST IP changed from 172.17.42.1 to 172.17.0.1
 * The database is still run on the HOST: 172.17.42.1:3306/ted
 * Cron restarts the containers every 4 hours 
-
-## Operation
-on `cantor`:
-
-      cd im-ted1k
-      # build (move `./data/` out of way ?)
-      docker-compose build
-      # run
-      docker-compose up -d
 
 
 

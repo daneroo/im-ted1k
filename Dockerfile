@@ -6,18 +6,32 @@
 
 # Pull base image.
 # Now using pip/requirements not ubuntu packages for python: 
-# FROM dockerfile/python
+# FROM hypriot/rpi-python
 FROM python:2.7
-
-# Install Python.
-RUN \
-  apt-get update && \
-  DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-client php5-cli php5-mysql
 
 # Set timezone 
 RUN \ 
   echo 'America/Montreal'  > /etc/timezone && \
   dpkg-reconfigure --frontend noninteractive tzdata
+
+# Install Python Dependacies (non pip)
+RUN \
+  apt-get update && \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y \
+	build-essential \
+	curl \
+	libmysqlclient-dev \
+	mysql-client \
+	php5-cli \
+	php5-mysql \
+	python-dev
+
+# Add our pip dependancy file
+ADD src/requirements.txt /src/requirements.txt
+
+# Install python packages (relative to WORKDIR)
+RUN \
+  pip install -r /src/requirements.txt
 
 # Force stdin, stdout and stderr to be totally unbuffered
 ENV PYTHONUNBUFFERED 1
@@ -27,10 +41,6 @@ ADD src /src
 
 # Define working directory.
 WORKDIR /src
-
-# Install python packages (relative to WORKDIR)
-RUN \
-  pip install --no-cache-dir -r requirements.txt
 
 # Define mountable directories.
 VOLUME ["/data"]
