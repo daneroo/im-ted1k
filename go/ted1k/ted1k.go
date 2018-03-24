@@ -1,25 +1,32 @@
 package ted1k
 
 import (
+	"encoding/binary"
 	"fmt"
 	"log"
 
 	"github.com/tarm/serial"
 )
 
+const verbose = true
 const PKT_REQUEST byte = 0xaa
 const ESCAPE byte = 0x10
 const PKT_BEGIN byte = 0x04
 const PKT_END byte = 0x03
 
+// Doit does it
 func Doit() {
-	log.Printf("const PKT_REQUEST: %q", PKT_REQUEST)
-	log.Printf("const ESCAPE: %x", ESCAPE)
-	log.Printf("const PKT_BEGIN: %x", PKT_BEGIN)
-	log.Printf("const PKT_END: %x", PKT_END)
+	if verbose {
+		log.Printf("const PKT_REQUEST: %q", PKT_REQUEST)
+		log.Printf("const ESCAPE: %x", ESCAPE)
+		log.Printf("const PKT_BEGIN: %x", PKT_BEGIN)
+		log.Printf("const PKT_END: %x", PKT_END)
+
+	}
 
 	// omitted ReadTimeout: e.g.: time.Millisecond * 500
-	c := &serial.Config{Name: "/hostdev/ttyUSB0", Baud: 19200}
+	// c := &serial.Config{Name: "/hostdev/ttyUSB0", Baud: 19200}
+	c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 19200}
 	s, err := serial.OpenPort(c)
 	if err != nil {
 		log.Fatal(err)
@@ -39,8 +46,9 @@ func Doit() {
 		log.Fatal(err)
 	}
 	raw = raw[:n]
-	log.Printf("raw: n:%d raw[:n]:%q", n, raw[:n])
-
+	if verbose {
+		log.Printf("raw: n:%d raw[:n]:%q", n, raw[:n])
+	}
 	decoded := make([]byte, 0)
 	escape_flag := false
 	for _, b := range raw {
@@ -49,26 +57,54 @@ func Doit() {
 			escape_flag = false
 			switch b {
 			case ESCAPE:
-				log.Println("Double Escape")
+				if verbose {
+					log.Println("Double Escape")
+				}
 				decoded = append(decoded, b)
 			case PKT_BEGIN:
-				log.Println("Reset PKT_BEGIN")
+				if verbose {
+					log.Println("Reset PKT_BEGIN")
+				}
 				decoded = make([]byte, 0)
 			case PKT_END:
-				log.Println("Reset PKT_END")
+				if verbose {
+					log.Println("Reset PKT_END")
+				}
 				// decoded = make([]byte)
 			default:
 				panic(fmt.Sprintf("Unknown escape byte %x", b))
 			}
 		case b == ESCAPE:
-			log.Printf("Escape %x", b)
+			if verbose {
+				log.Printf("Escape %x", b)
+			}
 			escape_flag = true
 		default:
-			log.Printf("Append %x", b)
+			if verbose {
+				log.Printf("Append %x", b)
+			}
 			decoded = append(decoded, b)
 		}
 	}
 
-	log.Printf("decoded: n:%d decoded[]:%q\n", len(decoded), decoded)
+	if verbose {
+		log.Printf("decoded: n:%d decoded[]:%q\n", len(decoded), decoded)
+	}
+	/*
+		   see [this](https://docs.python.org/2/library/struct.html) to decode python format in ted.py
 
+		       _protocol_len = 278
+
+		       # Offset,  name,             fmt,     scale
+		       (82,       'kw_rate',        "<H",    0.0001),
+		       (108,      'house_code',     "<B",    1),
+		       (247,      'kw',             "<H",    0.01),
+					 (251,      'volts',          "<H",    0.1),
+
+					 where <H is little endian, unsigned short, 2 bytes
+					 https://play.golang.org/p/G_4-t_NwoV9
+	*/
+	watts := binary.LittleEndian.Uint16(decoded[247:249]) * 10
+	volts := float32(binary.LittleEndian.Uint16(decoded[251:253])) / 10
+	log.Printf("watts:%d volts:%.1f |decoded|=%d |raw|=%d \n", watts, volts, len(decoded), len(raw))
 }

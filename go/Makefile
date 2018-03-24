@@ -1,19 +1,19 @@
 # The import path is where your repository can be found.
 # To import subpackages, always prepend the full import path.
 # If you change this, run `make clean`. Read more: https://git.io/vM7zV
-IMPORT_PATH := github.com/FiloSottile/example
+IMPORT_PATH := github.com/daneroo/im-ted1k/go
 
-# V := 1 # When V is set, print commands and build progress.
+V := 1 # When V is set, print commands and build progress.
 
 # Space separated patterns of packages to skip in list, test, format.
 IGNORED_PACKAGES := /vendor/
 
 .PHONY: all
-all: build
+all: capture
 
-.PHONY: build
-build: .GOPATH/.ok
-	$Q go install $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)
+.PHONY: capture
+capture: .GOPATH/.ok
+	$Q go install $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/cmd/capture
 
 ### Code not in the repository root? Another binary? Add to the path like this.
 # .PHONY: otherbin
@@ -81,7 +81,7 @@ setup: clean .GOPATH/.ok
 	- ./bin/gvt fetch github.com/wadey/gocovmerge
 
 VERSION          := $(shell git describe --tags --always --dirty="-dev")
-DATE             := $(shell date -u '+%Y-%m-%d-%H%M UTC')
+DATE             := $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
 VERSION_FLAGS    := -ldflags='-X "main.Version=$(VERSION)" -X "main.BuildTime=$(DATE)"'
 
 # cd into the GOPATH to workaround ./... not following symlinks
@@ -100,7 +100,7 @@ Q := $(if $V,,@)
 
 .GOPATH/.ok:
 	$Q mkdir -p "$(dir .GOPATH/src/$(IMPORT_PATH))"
-	$Q ln -s ../../../.. ".GOPATH/src/$(IMPORT_PATH)"
+	$Q ln -s ../../../../.. ".GOPATH/src/$(IMPORT_PATH)"
 	$Q mkdir -p .GOPATH/test .GOPATH/cover
 	$Q mkdir -p bin
 	$Q ln -s ../bin .GOPATH/bin
