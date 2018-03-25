@@ -12,6 +12,8 @@ import (
 	"github.com/tarm/serial"
 )
 
+var serialDeviceBaseDirs = []string{"/hostdev", "/dev"}
+
 const packetRequestByte byte = 0xaa
 const escapeByte byte = 0x10
 const packetBegin byte = 0x04
@@ -28,7 +30,7 @@ type entry struct {
 // - Calculate delay to make loop every second
 func StartLoop() error {
 
-	serialName, err := findSerialDevice("/dev") // /hostdev
+	serialName, err := findSerialDevice(serialDeviceBaseDirs)
 	log.Printf("Using serial port: %s", serialName)
 
 	// omitted ReadTimeout: e.g.: time.Millisecond * 500
@@ -41,14 +43,15 @@ func StartLoop() error {
 	log.Printf("Connected to serial port: %s", serialName)
 
 	for {
-		watts, volts, err := fetchAndReadValues(s)
+		entry, err := fetchAndReadValues(s)
 		if err != nil {
 			return err
 		}
-
 		now := time.Now()
 		stamp := now.UTC().Format(time.RFC3339)
-		log.Printf("%s watts: %d volts: %.1f\n", stamp, watts, volts)
+		if entry != nil {
+			log.Printf("%s watts: %d volts: %.1f\n", stamp, entry.watts, entry.volts)
+		}
 		sleepUntilNextSecondWithOffset(now)
 	}
 }
@@ -60,13 +63,17 @@ func sleepUntilNextSecondWithOffset(now time.Time) {
 	time.Sleep(nanosUntilNextSecondPlusOffset)
 }
 
-func fetchAndReadValues(s *serial.Port) (int, float32, error) {
+func fetchAndReadValues(s *serial.Port) (*entry, error) {
 	raw, err := fetchAndReadBuffer(s)
 	if err != nil {
-		return 0, 0.0, err
+		return nil, err
 	}
-	watts, volts := decodeValues(raw)
-	return watts, volts, nil
+	entry := decodeValues(raw)
+	if entry == nil {
+		log.Printf("warning: skipping entry |raw|=%d |decoded|=%d\n", len(raw), len(decodeBuffer(raw)))
+
+	}
+	return entry, nil
 }
 
 func fetchAndReadBuffer(s *serial.Port) ([]byte, error) {
@@ -81,12 +88,15 @@ func fetchAndReadBuffer(s *serial.Port) ([]byte, error) {
 		return nil, err
 	}
 	raw = raw[:n]
-	log.Printf("raw: n:%d raw[:n]:%q", n, raw[:n])
+	// log.Printf("raw: n:%d raw[:n]:%q", n, raw[:n])
 	return raw, nil
 }
 
-func decodeValues(raw []byte) (int, float32) {
+func decodeValues(raw []byte) *entry {
 	decoded := decodeBuffer(raw)
+	if len(decoded) != 278 {
+		return nil
+	}
 	/*
 		see [this](https://docs.python.org/2/library/struct.html) to decode python format in ted.py
 			_protocol_len = 278
@@ -98,7 +108,7 @@ func decodeValues(raw []byte) (int, float32) {
 	*/
 	watts := int(binary.LittleEndian.Uint16(decoded[247:249]) * 10)
 	volts := float32(binary.LittleEndian.Uint16(decoded[251:253])) / 10
-	return watts, volts
+	return &entry{watts: watts, volts: volts}
 }
 
 func decodeBuffer(raw []byte) []byte {
@@ -134,18 +144,19 @@ func decodeBuffer(raw []byte) []byte {
 	return decoded
 }
 
-func findSerialDevice(baseDir string) (string, error) {
-	contents, _ := ioutil.ReadDir(baseDir)
+func findSerialDevice(baseDirs []string) (string, error) {
+	for _, baseDir := range baseDirs {
+		contents, _ := ioutil.ReadDir(baseDir)
 
-	// Look for what is mostly likely the Arduino device
-	for _, f := range contents {
-		if strings.Contains(f.Name(), "tty.usbserial") ||
-			strings.Contains(f.Name(), "ttyUSB") {
-			return path.Join(baseDir, f.Name()), nil
+		// Look for what is mostly likely the Arduino device
+		for _, f := range contents {
+			if strings.Contains(f.Name(), "tty.usbserial") ||
+				strings.Contains(f.Name(), "ttyUSB") {
+				return path.Join(baseDir, f.Name()), nil
+			}
 		}
 	}
-
 	// Have not been able to find a USB device that 'looks'
 	// like an Arduino.
-	return "", fmt.Errorf("Unable to find serial device in %s", baseDir)
+	return "", fmt.Errorf("Unable to find serial device in %q", baseDirs)
 }
