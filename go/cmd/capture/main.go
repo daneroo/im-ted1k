@@ -19,5 +19,10 @@ func main() {
 	log.SetFlags(0)
 	log.SetOutput(new(logWriter))
 	log.Printf("Starting TED1K capture\n") // version,buildDate
-	ted1k.StartLoop()
+	err := ted1k.StartLoop()
+	if err != nil {
+		log.Println(err)
+		// just to prevent rapid container reatart!
+		time.Sleep(5 * time.Second)
+	}
 }

@@ -31,6 +31,9 @@ type entry struct {
 func StartLoop() error {
 
 	serialName, err := findSerialDevice(serialDeviceBaseDirs)
+	if err != nil {
+		return err
+	}
 	log.Printf("Using serial port: %s", serialName)
 
 	// omitted ReadTimeout: e.g.: time.Millisecond * 500
@@ -158,5 +161,5 @@ func findSerialDevice(baseDirs []string) (string, error) {
 	}
 	// Have not been able to find a USB device that 'looks'
 	// like an Arduino.
-	return "", fmt.Errorf("Unable to find serial device in %q", baseDirs)
+	return "", fmt.Errorf("Unable to find a serial device in %q", baseDirs)
 }
