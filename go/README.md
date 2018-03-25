@@ -1,6 +1,8 @@
 # Go port for im-ted1k
 
-Just read the serial port for now.
+- Loop every second
+- Take a measurement from serial port
+- Store to the database
 
 For discussion of serial port access, see [this article](http://reprage.com/post/using-golang-to-connect-raspberrypi-and-arduino/).
 And try to use:
@@ -10,33 +12,38 @@ And try to use:
 - old fork of above https://github.com/huin/goserial
 - also: https://github.com/edartuz/go-serial
 
+## Docker
+```
+docker build -t capture:latest .
+docker run capture:latest
+```
+
 ## Vendoring - vgo and hellogopher
 - [hellogopher](https://github.com/cloudflare/hellogopher)
 - [vgo-tour (usage)](https://research.swtch.com/vgo-tour)
+Install vgo
 ```
 go get -u golang.org/x/vgo
 ```
 
-Just build:
+This is to allow vscode to see vendor'd directory:
 ```
-vgo build ${VERSION_FLAGS} ./cmd/capture
+.vscode:   "go.gopath": "/Users/daniellauzon/Code/iMetrical/im-ted1k/go/.GOPATH"
+
+vgo vendor
 ```
 
-Build, injecting version and buildTime
+Just build:
 ```
-VERSION=$(git describe --tags --always --dirty="-dev")
-DATE=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
-VERSION_FLAGS=--ldflags="-X main.Version=${VERSION} -X main.BuildTime=${DATE}"
-vgo build "${VERSION_FLAGS}" ./cmd/capture
+vgo build ./cmd/capture
 ```
+
 
 Cross compiling for linux
 ```
-VERSION=$(git describe --tags --always --dirty="-dev")
-DATE=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
-VERSION_FLAGS=--ldflags="-X main.Version=${VERSION} -X main.BuildTime=${DATE}"
-GOOS=linux GORACH=amd64 vgo build "${VERSION_FLAGS}" ./cmd/capture
+GOOS=linux GORACH=amd64 vgo build ./cmd/capture
 ```
+
 The system I had was using `govend`: `vendor.yml`, `vendor/`
 - I added an import comment to `main.go:` 
 ```

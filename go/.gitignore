@@ -1,2 +1,3 @@
-.GOPATH/
-bin/
+/.GOPATH
+/bin
+dot.netrc
