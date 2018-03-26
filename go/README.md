@@ -4,6 +4,14 @@
 - Take a measurement from serial port
 - Store to the database
 
+## TODO
+- `.netrc` still required for vgo based build (GitHub API token)
+- Reorganize this document (vgo,docker,..)
+    - vgo and vscode (with `vendor/` and `$GOPATH`)
+- Integrate into `go-ted1k` repo.
+- `vgo` pinned version for mysql driver
+
+## References
 For discussion of serial port access, see [this article](http://reprage.com/post/using-golang-to-connect-raspberrypi-and-arduino/).
 And try to use:
 
@@ -17,6 +25,7 @@ And try to use:
 docker build -t capture:latest .
 docker run --rm -it --name capture capture:latest
 ```
+
 This is a way to build and extract the executable (capture) from the container without starting it:
 ```
 docker build -t capture:latest .
