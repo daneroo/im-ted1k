@@ -5,6 +5,7 @@
 - Store to the database
 
 ## TODO
+- move getDB to startLoop(creds)
 - `.netrc` still required for vgo based build (GitHub API token)
 - Reorganize this document (vgo,docker,..)
     - vgo and vscode (with `vendor/` and `$GOPATH`)

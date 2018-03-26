@@ -26,6 +26,7 @@ func main() {
 	log.Printf("Starting TED1K capture\n") // version,buildDate
 	db := getDB()
 	if db == nil {
+		time.Sleep(10 * time.Second) // prevent rapid container restart!
 		log.Println("Unable to open database")
 		os.Exit(-1)
 	}
@@ -34,8 +35,7 @@ func main() {
 	err := ted1k.StartLoop(db)
 	if err != nil {
 		log.Println(err)
-		// just to prevent rapid container reatart!
-		time.Sleep(2 * time.Second)
+		time.Sleep(10 * time.Second) // prevent rapid container restart!
 		os.Exit(-1)
 	}
 }
@@ -45,8 +45,8 @@ func getDB() *sql.DB {
 
 	// db, err := sql.Open("sqlite3", "./ted.db")
 	// db, err := sql.Open("mysql", "ted:secret@tcp(0.0.0.0:3306)/ted")
-	db, err := sql.Open("mysql", "root@tcp(0.0.0.0:3306)/ted")
-	// db, err := sql.Open("mysql", "root@tcp(teddb:3306)/ted")
+	// db, err := sql.Open("mysql", "root@tcp(0.0.0.0:3306)/ted")
+	db, err := sql.Open("mysql", "root@tcp(teddb:3306)/ted")
 
 	if err != nil {
 		log.Println(err)

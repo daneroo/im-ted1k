@@ -18,7 +18,7 @@ scp -p ted.watt.*.sql.bz2 shannon:/Volumes/Space/archive/mirror/ted
 
 ## To run
 ```
-docker-compose build
+docker-compose build --pull
 docker-compose up -d
 ```
 
