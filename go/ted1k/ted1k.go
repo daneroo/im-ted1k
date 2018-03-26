@@ -1,11 +1,13 @@
 package ted1k
 
 import (
+	"database/sql"
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"path"
+	"reflect"
 	"strings"
 	"time"
 
@@ -14,6 +16,7 @@ import (
 
 var serialDeviceBaseDirs = []string{"/hostdev", "/dev"}
 
+const fmtRFC3339NoZ = "2006-01-02T15:04:05"
 const packetRequestByte byte = 0xaa
 const escapeByte byte = 0x10
 const packetBegin byte = 0x04
@@ -28,7 +31,7 @@ type entry struct {
 // - Take a measurement from serial port,
 // - Store to the database,
 // - Calculate delay to make loop every second
-func StartLoop() error {
+func StartLoop(db *sql.DB) error {
 
 	serialName, err := findSerialDevice(serialDeviceBaseDirs)
 	if err != nil {
@@ -51,9 +54,10 @@ func StartLoop() error {
 			return err
 		}
 		now := time.Now()
-		stamp := now.UTC().Format(time.RFC3339)
+		stamp := now.UTC().Format(fmtRFC3339NoZ)
 		if entry != nil {
 			log.Printf("%s watts: %d volts: %.1f\n", stamp, entry.watts, entry.volts)
+			InsertEntry(db, stamp, entry.watts)
 		}
 		sleepUntilNextSecondWithOffset(now)
 	}
@@ -145,6 +149,44 @@ func decodeBuffer(raw []byte) []byte {
 
 	// log.Printf("decoded: n:%d decoded[]:%q\n", len(decoded), decoded)
 	return decoded
+}
+
+// conditional on database connection type - Yay SQL
+// This is one approach to the dialect specific queries
+func insertSQLFormat(db *sql.DB) string {
+	const insertSQLFormatMySQL = "INSERT IGNORE INTO watt (stamp, watt) VALUES ('%s',%d)"
+	const insertSQLFormatSQLITE = "INSERT OR IGNORE INTO watt (stamp, watt) VALUES ('%s',%d)"
+
+	driverName := reflect.ValueOf(db.Driver()).Type().String()
+	// log.Printf("db.Driver.Name: %s\n", driverName)
+	switch driverName {
+	case "*mysql.MySQLDriver":
+		return insertSQLFormatMySQL
+	case "*sqlite3.SQLiteDriver":
+		return insertSQLFormatSQLITE
+	default:
+		log.Fatalf("Could not create insert statement for unknown driver: %s", driverName)
+		return ""
+	}
+
+}
+
+// InsertEntry inserts one entry - ignores if duplicate key (stamp)
+func InsertEntry(db *sql.DB, stamp string, watts int) error {
+	// const insertSQLFormat = "INSERT INTO watt (stamp, watt) VALUES ('%s',%d)"
+	insertSQLFormat := insertSQLFormat(db)
+	insertSQL := fmt.Sprintf(insertSQLFormat, stamp, watts)
+	_, err := db.Exec(insertSQL)
+	if err != nil {
+		// TODO(daneroo): Second option to dialect problem is to catch, the insert duplicate
+		// and safely ignore the error in this case (insert [or] ignore)
+		// MySQL:  Error 1062: Duplicate entry '1966-05-16 01:23:45' for key 'PRIMARY'
+		// Sqlite: UNIQUE constraint failed: watt.stamp
+		log.Println(err)
+		return err
+	}
+
+	return nil
 }
 
 func findSerialDevice(baseDirs []string) (string, error) {

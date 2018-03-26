@@ -15,7 +15,14 @@ And try to use:
 ## Docker
 ```
 docker build -t capture:latest .
-docker run capture:latest
+docker run --rm -it --name capture capture:latest
+```
+This is a way to build and extract the executable (capture) from the container without starting it:
+```
+docker build -t capture:latest .
+docker create --name capture capture:latest
+docker cp capture:/capture ./capture-linux-amd64
+scp -p capture-linux-amd64  daniel@euler:
 ```
 
 ## Vendoring - vgo and hellogopher
@@ -41,7 +48,7 @@ vgo build ./cmd/capture
 
 Cross compiling for linux
 ```
-GOOS=linux GORACH=amd64 vgo build ./cmd/capture
+GOOS=linux GOARCH=amd64 vgo build ./cmd/capture
 ```
 
 The system I had was using `govend`: `vendor.yml`, `vendor/`
