@@ -65,9 +65,5 @@ func getDB() *sql.DB {
 		log.Printf("%q: %s\n", err, ddlStmt)
 		return nil
 	}
-	// err = ted1k.InsertEntry(db, "1966-05-16T01:23:45", 1234)
-	// if err != nil {
-	// 	log.Printf("%q\n", err)
-	// }
 	return db
 }

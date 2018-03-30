@@ -3,6 +3,7 @@ package ted1k
 import (
 	"database/sql"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -17,12 +18,9 @@ import (
 var serialDeviceBaseDirs = []string{"/hostdev", "/dev"}
 
 const fmtRFC3339NoZ = "2006-01-02T15:04:05"
-const packetRequestByte byte = 0xaa
-const escapeByte byte = 0x10
-const packetBegin byte = 0x04
-const packetEnd byte = 0x03
 
 type entry struct {
+	stamp string // now.UTC().Format(fmtRFC3339NoZ) no timezone for db insert
 	watts int
 	volts float32
 }
@@ -48,8 +46,10 @@ func StartLoop(db *sql.DB) error {
 	}
 	log.Printf("Connected to serial port: %s", serialName)
 
+	state := &state{packetBuffer: nil, escapeFlag: false}
+	showState("-", state)
 	for {
-		entry, err := fetchAndReadValues(s)
+		entry, err := poll(s, state)
 		if err != nil {
 			return err
 		}
@@ -57,53 +57,65 @@ func StartLoop(db *sql.DB) error {
 		stamp := now.UTC().Format(fmtRFC3339NoZ)
 		if entry != nil {
 			log.Printf("%s watts: %d volts: %.1f\n", stamp, entry.watts, entry.volts)
-			InsertEntry(db, stamp, entry.watts)
+			insertEntry(db, stamp, entry.watts)
+		} else {
+			log.Printf("warning: skipping entry (nil)\n")
 		}
-		sleepUntilNextSecondWithOffset(now)
+		offset := 100 * time.Millisecond
+		time.Sleep(delayUntilNextSecond(now, offset))
+
 	}
 }
 
-// TODO:daneroo what if we are betweem (0,desiredOffet]?
-func sleepUntilNextSecondWithOffset(now time.Time) {
-	desiredOffsetNanos := 100000000 // .1s
-	nanosUntilNextSecondPlusOffset := time.Duration(1000000000 - now.Nanosecond() + desiredOffsetNanos)
-	time.Sleep(nanosUntilNextSecondPlusOffset)
-}
-
-func fetchAndReadValues(s *serial.Port) (*entry, error) {
-	raw, err := fetchAndReadBuffer(s)
+// TODO(daneroo): Create a New method to store state (serial.Port,escapeFlag,packetBuffer)
+// TODO(daneroo): Rename to Poll: writeRequest,readResponse,decode
+func poll(s *serial.Port, state *state) (*entry, error) {
+	err := writeRequest(s)
 	if err != nil {
 		return nil, err
 	}
-	entry := decodeValues(raw)
+	raw, err := readResponse(s)
+	if err != nil {
+		return nil, err
+	}
+	entry := extract(raw, state)
 	if entry == nil {
-		log.Printf("warning: skipping entry |raw|=%d |decoded|=%d\n", len(raw), len(decodeBuffer(raw)))
-
 	}
 	return entry, nil
 }
 
-func fetchAndReadBuffer(s *serial.Port) ([]byte, error) {
-	n, err := s.Write([]byte{packetRequestByte})
-	if err != nil {
-		return nil, err
-	}
+// write the request packet to the serial port
+func writeRequest(s *serial.Port) error {
+	const packetRequestByte byte = 0xaa
+	_, err := s.Write([]byte{packetRequestByte})
+	return err
+}
 
+// read available response frm the serial port
+func readResponse(s *serial.Port) ([]byte, error) {
 	raw := make([]byte, 4096)
-	n, err = s.Read(raw)
+	n, err := s.Read(raw)
 	if err != nil {
 		return nil, err
 	}
 	raw = raw[:n]
-	// log.Printf("raw: n:%d raw[:n]:%q", n, raw[:n])
 	return raw, nil
 }
 
-func decodeValues(raw []byte) *entry {
-	decoded := decodeBuffer(raw)
-	if len(decoded) != 278 {
+func extract(raw []byte, state *state) *entry {
+	packets := decode(raw, state)
+	if len(packets) == 0 {
 		return nil
 	}
+	if len(packets) > 1 {
+		log.Printf("warning: extract got multiple packets: %d", len(packets))
+	}
+	decoded := packets[0]
+	if len(decoded) != 278 {
+		log.Printf("raw:     n: %d raw[]:%q", len(raw), hex.EncodeToString(raw))
+		return nil
+	}
+
 	/*
 		see [this](https://docs.python.org/2/library/struct.html) to decode python format in ted.py
 			_protocol_len = 278
@@ -118,37 +130,52 @@ func decodeValues(raw []byte) *entry {
 	return &entry{watts: watts, volts: volts}
 }
 
-func decodeBuffer(raw []byte) []byte {
-	decoded := make([]byte, 0)
-	escapeFlag := false
+type state struct {
+	// stamp        string // now.UTC().Format(fmtRFC3339NoZ) no timezone for db insert
+	packetBuffer []byte
+	escapeFlag   bool
+}
+
+// TODO(daneroo): perhaps this should be a channel writer...
+// func (state *state) decode(raw []byte) [][]byte {
+func decode(raw []byte, state *state) [][]byte {
+	const escapeByte byte = 0x10
+	const packetBegin byte = 0x04
+	const packetEnd byte = 0x03
+
+	var packets = make([][]byte, 0, 1)
 	for _, b := range raw {
-		switch {
-		case escapeFlag:
-			escapeFlag = false
-			switch b {
-			case escapeByte:
-				// log.Println("Double Escape")
-				decoded = append(decoded, b)
-			case packetBegin:
-				// log.Println("Reset packetBegin")
-				decoded = make([]byte, 0)
-			case packetEnd:
-				// log.Println("Reset packetEnd")
-				// decoded = make([]byte)
-			default:
+		if state.escapeFlag {
+			state.escapeFlag = false
+			if b == escapeByte {
+				if state.packetBuffer != nil {
+					state.packetBuffer = append(state.packetBuffer, b)
+				}
+			} else if b == packetBegin {
+				state.packetBuffer = make([]byte, 0, 278) // set expected capacity
+			} else if b == packetEnd {
+				if state.packetBuffer != nil {
+					packets = append(packets, state.packetBuffer)
+					state.packetBuffer = nil
+				}
+			} else {
 				panic(fmt.Sprintf("Unknown escape byte %x", b))
 			}
-		case b == escapeByte:
-			// log.Printf("Escape %x", b)
-			escapeFlag = true
-		default:
-			// log.Printf("Append %x", b)
-			decoded = append(decoded, b)
+		} else if b == escapeByte {
+			state.escapeFlag = true
+		} else {
+			state.packetBuffer = append(state.packetBuffer, b)
 		}
 	}
 
-	// log.Printf("decoded: n:%d decoded[]:%q\n", len(decoded), decoded)
-	return decoded
+	showState("+", state)
+	// log.Printf("state.packetBuffer: n:%d state.packetBuffer[]:%q\n", len(state.packetBuffer), state.packetBuffer)
+	return packets
+}
+
+// TODO(daneroo): remove
+func showState(msg string, state *state) {
+	log.Printf("%sstate: escape=%v buf=%d %s\n", msg, state.escapeFlag, len(state.packetBuffer), hex.EncodeToString(state.packetBuffer))
 }
 
 // conditional on database connection type - Yay SQL
@@ -171,8 +198,8 @@ func insertSQLFormat(db *sql.DB) string {
 
 }
 
-// InsertEntry inserts one entry - ignores if duplicate key (stamp)
-func InsertEntry(db *sql.DB, stamp string, watts int) error {
+// insertEntry inserts one entry - ignores if duplicate key (stamp)
+func insertEntry(db *sql.DB, stamp string, watts int) error {
 	// const insertSQLFormat = "INSERT INTO watt (stamp, watt) VALUES ('%s',%d)"
 	insertSQLFormat := insertSQLFormat(db)
 	insertSQL := fmt.Sprintf(insertSQLFormat, stamp, watts)
