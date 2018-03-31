@@ -26,7 +26,7 @@ func main() {
 	log.Printf("Starting TED1K capture\n") // version,buildDate
 	db := getDB()
 	if db == nil {
-		time.Sleep(10 * time.Second) // prevent rapid container restart!
+		time.Sleep(5 * time.Second) // prevent rapid container restart!
 		log.Println("Unable to open database")
 		os.Exit(-1)
 	}
@@ -35,7 +35,7 @@ func main() {
 	err := ted1k.StartLoop(db)
 	if err != nil {
 		log.Println(err)
-		time.Sleep(10 * time.Second) // prevent rapid container restart!
+		time.Sleep(5 * time.Second) // prevent rapid container restart!
 		os.Exit(-1)
 	}
 }

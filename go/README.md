@@ -36,8 +36,16 @@ And try to use:
     - poll
         - writeRequwst() (error)
         - readResponse() (byte[],error)
-            - extract(raw,state) (*entry)
-                -decode(raw,state) ([][]byte)
+        - extract(raw,state) (*entry)
+            -decode(raw,state) ([][]byte)
+Into:
+    - type frame []byte (guaranteed 278 length)
+    - NewSerial() *serial (port and state)
+    - (*serial) poll ([]entry)
+        - (*serial) writeRequest() (error)
+        - (*serial) readResponse() (byte[],error)
+        - (state *) decode(raw) ([]frame)
+        - extract(frame) entry
 
 ## Docker
 ```
