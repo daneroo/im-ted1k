@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"path"
@@ -25,6 +26,13 @@ type entry struct {
 	volts float32
 }
 
+// TODO(daneroo): remove
+func showState(msg string, state *state) {
+	if state.escapeFlag || len(state.packetBuffer) > 0 {
+		log.Printf("%sstate: escape=%v buf=%d %s\n", msg, state.escapeFlag, len(state.packetBuffer), hex.EncodeToString(state.packetBuffer))
+	}
+}
+
 // StartLoop performs the read loop:
 // - Take a measurement from serial port,
 // - Store to the database,
@@ -37,9 +45,9 @@ func StartLoop(db *sql.DB) error {
 	}
 	log.Printf("Using serial port: %s", serialName)
 
-	// omitted ReadTimeout: e.g.: time.Millisecond * 500
-	// c := &serial.Config{Name: "/hostdev/ttyUSB0", Baud: 19200}
-	c := &serial.Config{Name: serialName, Baud: 19200}
+	// ReadTimeout: makes the port.Read() non-blocking, causing a more sophisticated readRresponse()
+	//  smallest possible value: 0.1s time.Millisecond * 100,  1 deciSecond
+	c := &serial.Config{Name: serialName, Baud: 19200, ReadTimeout: time.Millisecond * 100}
 	s, err := serial.OpenPort(c)
 	if err != nil {
 		return err
@@ -49,21 +57,22 @@ func StartLoop(db *sql.DB) error {
 	state := &state{packetBuffer: nil, escapeFlag: false}
 	showState("-", state)
 	for {
+		stamp := time.Now().UTC().Format(fmtRFC3339NoZ) // stamp is set to second (before poll() is called)
 		entry, err := poll(s, state)
 		if err != nil {
 			return err
 		}
-		now := time.Now()
-		stamp := now.UTC().Format(fmtRFC3339NoZ)
+		showState("+", state)
+
+		// stamp should be before calling poll?
 		if entry != nil {
 			log.Printf("%s watts: %d volts: %.1f\n", stamp, entry.watts, entry.volts)
 			insertEntry(db, stamp, entry.watts)
 		} else {
 			log.Printf("warning: skipping entry (nil)\n")
 		}
-		offset := 100 * time.Millisecond
-		time.Sleep(delayUntilNextSecond(now, offset))
-
+		offset := 10 * time.Millisecond // used to be 0.1s
+		time.Sleep(delayUntilNextSecond(time.Now(), offset))
 	}
 }
 
@@ -92,14 +101,46 @@ func writeRequest(s *serial.Port) error {
 }
 
 // read available response frm the serial port
+// Now that the serial port is non-blocking, we accumulate the response
+// Termination condition is read:n==0
+// We account for the fact that the first response bytes might take a while to come:
+// - First sleep for 300ms
+// - If we get a read:n==0 we only return if we have already started receiving bytes
+// - Otherwise we can attempt up to zeroLengthTerminationCount times
+// We return the accumulated read bytes.
 func readResponse(s *serial.Port) ([]byte, error) {
+	delayBeforeFirstRead := time.Millisecond * 300
+	zeroLengthTerminationCount := 4
+	zeroLengthTimeouts := 0
+
+	// Sleep before first Read
+	time.Sleep(delayBeforeFirstRead)
+
+	// returned output bytes
+	out := make([]byte, 0)
+	// buffer for reading (inner loop) re-used, only allocated once
 	raw := make([]byte, 4096)
-	n, err := s.Read(raw)
-	if err != nil {
-		return nil, err
+	for {
+		n, err := s.Read(raw)
+		if err != nil && err != io.EOF { // zero bytes will produce an EOF error
+			return nil, err
+		}
+		if n == 0 { // might also break if accumulated>282,283, or as soon as decode is integrated
+			zeroLengthTimeouts++
+			if zeroLengthTimeouts > 1 { // tone down debug logging
+				log.Printf("debug: s.Read break (n=0) #%d out:%d", zeroLengthTimeouts, len(out))
+			}
+			if len(out) > 0 || zeroLengthTimeouts > zeroLengthTerminationCount {
+				break
+			}
+		} else {
+			out = append(out, raw[:n]...)
+			// wait before we read again
+			time.Sleep(time.Millisecond * 50)
+		}
 	}
-	raw = raw[:n]
-	return raw, nil
+
+	return out, nil
 }
 
 func extract(raw []byte, state *state) *entry {
@@ -112,10 +153,9 @@ func extract(raw []byte, state *state) *entry {
 	}
 	decoded := packets[0]
 	if len(decoded) != 278 {
-		log.Printf("raw:     n: %d raw[]:%q", len(raw), hex.EncodeToString(raw))
+		log.Printf("raw: %d %s", len(raw), hex.EncodeToString(raw))
 		return nil
 	}
-
 	/*
 		see [this](https://docs.python.org/2/library/struct.html) to decode python format in ted.py
 			_protocol_len = 278
@@ -131,13 +171,13 @@ func extract(raw []byte, state *state) *entry {
 }
 
 type state struct {
-	// stamp        string // now.UTC().Format(fmtRFC3339NoZ) no timezone for db insert
+	stamp        string // now.UTC().Format(fmtRFC3339NoZ) no timezone for db insert
 	packetBuffer []byte
 	escapeFlag   bool
 }
 
 // TODO(daneroo): perhaps this should be a channel writer...
-// func (state *state) decode(raw []byte) [][]byte {
+// Can accumulate bytes corresponding to more than one frame
 func decode(raw []byte, state *state) [][]byte {
 	const escapeByte byte = 0x10
 	const packetBegin byte = 0x04
@@ -153,10 +193,12 @@ func decode(raw []byte, state *state) [][]byte {
 				}
 			} else if b == packetBegin {
 				state.packetBuffer = make([]byte, 0, 278) // set expected capacity
+				state.stamp = time.Now().UTC().Format(fmtRFC3339NoZ)
 			} else if b == packetEnd {
 				if state.packetBuffer != nil {
 					packets = append(packets, state.packetBuffer)
 					state.packetBuffer = nil
+					state.stamp = ""
 				}
 			} else {
 				panic(fmt.Sprintf("Unknown escape byte %x", b))
@@ -167,15 +209,7 @@ func decode(raw []byte, state *state) [][]byte {
 			state.packetBuffer = append(state.packetBuffer, b)
 		}
 	}
-
-	showState("+", state)
-	// log.Printf("state.packetBuffer: n:%d state.packetBuffer[]:%q\n", len(state.packetBuffer), state.packetBuffer)
 	return packets
-}
-
-// TODO(daneroo): remove
-func showState(msg string, state *state) {
-	log.Printf("%sstate: escape=%v buf=%d %s\n", msg, state.escapeFlag, len(state.packetBuffer), hex.EncodeToString(state.packetBuffer))
 }
 
 // conditional on database connection type - Yay SQL
