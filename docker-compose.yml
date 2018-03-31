@@ -19,7 +19,7 @@ services:
 
   capture:
     build: ./go
-    # replace these two lines to restpre pytho version of capture
+    # replace these two lines to restpre python version of capture
     # build: .
     # command: python capture.py --forever --device /hostdev/ttyUSB0
     restart: unless-stopped

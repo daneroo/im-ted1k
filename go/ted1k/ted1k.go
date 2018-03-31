@@ -34,9 +34,10 @@ func showState(msg string, state *state) {
 }
 
 // StartLoop performs the read loop:
-// - Take a measurement from serial port,
+// - Take a measurement from serial port (poll()),
 // - Store to the database,
-// - Calculate delay to make loop every second
+// - Calculate delay to make loop every second (with offset)
+// TODO(daneroo): move discovery (invocation) out to main
 func StartLoop(db *sql.DB) error {
 
 	serialName, err := findSerialDevice(serialDeviceBaseDirs)
@@ -77,7 +78,6 @@ func StartLoop(db *sql.DB) error {
 }
 
 // TODO(daneroo): Create a New method to store state (serial.Port,escapeFlag,packetBuffer)
-// TODO(daneroo): Rename to Poll: writeRequest,readResponse,decode
 func poll(s *serial.Port, state *state) (*entry, error) {
 	err := writeRequest(s)
 	if err != nil {
@@ -100,7 +100,7 @@ func writeRequest(s *serial.Port) error {
 	return err
 }
 
-// read available response frm the serial port
+// Read available response frm the serial port
 // Now that the serial port is non-blocking, we accumulate the response
 // Termination condition is read:n==0
 // We account for the fact that the first response bytes might take a while to come:
