@@ -5,7 +5,17 @@
 - Store to the database
 
 ## TODO
-- move getDB to startLoop(creds)
+- Detect missed loops?
+- Add Config to ted1k, use from Main
+    - move getDB to startLoop(creds)
+- separate serial to own file
+- refactor decode/extract API *entry to []entry, use last on multiple
+    - [Immutable slice appending](https://play.golang.org/p/lakKZq5UV-m)
+- Main Loop monitor
+    - docker health?
+    - internal restart
+    - Test USB failover
+    - DB pause/restart
 - `.netrc` still required for vgo based build (GitHub API token)
 - Reorganize this document (vgo,docker,..)
     - vgo and vscode (with `vendor/` and `$GOPATH`)
@@ -20,6 +30,14 @@ And try to use:
 - previous https://github.com/tarm/goserial
 - old fork of above https://github.com/huin/goserial
 - also: https://github.com/edartuz/go-serial
+
+## Call Graph
+- StartLoop
+    - poll
+        - writeRequwst() (error)
+        - readResponse() (byte[],error)
+            - extract(raw,state) (*entry)
+                -decode(raw,state) ([][]byte)
 
 ## Docker
 ```

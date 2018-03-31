@@ -58,6 +58,7 @@ func StartLoop(db *sql.DB) error {
 	state := &state{packetBuffer: nil, escapeFlag: false}
 	showState("-", state)
 	for {
+		loopStart := time.Now().UTC()
 		stamp := time.Now().UTC().Format(fmtRFC3339NoZ) // stamp is set to second (before poll() is called)
 		entry, err := poll(s, state)
 		if err != nil {
@@ -67,10 +68,13 @@ func StartLoop(db *sql.DB) error {
 
 		// stamp should be before calling poll?
 		if entry != nil {
-			log.Printf("%s watts: %d volts: %.1f\n", stamp, entry.watts, entry.volts)
 			insertEntry(db, stamp, entry.watts)
+			log.Printf("%s watts: %d volts: %.1f\n", stamp, entry.watts, entry.volts)
 		} else {
-			log.Printf("warning: skipping entry (nil)\n")
+			log.Printf("warning: skipping entry (no entry from poll)\n")
+		}
+		if delay := time.Since(loopStart); delay > time.Second {
+			log.Printf("warning: skipping entry (loop took %v>1s)\n", delay)
 		}
 		offset := 10 * time.Millisecond // used to be 0.1s
 		time.Sleep(delayUntilNextSecond(time.Now(), offset))
