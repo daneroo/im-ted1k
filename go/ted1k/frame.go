@@ -11,21 +11,21 @@ import (
 
 type frame []byte // represents a decoded frame: most likely always len=278
 
-type bufferState struct {
+type decoderState struct {
 	// stamp        string // now.UTC().Format(fmtRFC3339NoZ) no timezone for db insert
 	packetBuffer []byte
 	escapeFlag   bool
 }
 
 // TODO(daneroo): remove
-func (state *bufferState) show(msg string) {
+func (state *decoderState) show(msg string) {
 	if state.escapeFlag || len(state.packetBuffer) > 0 {
 		log.Printf("%sstate: escape=%v buf=%d %s\n", msg, state.escapeFlag, len(state.packetBuffer), hex.EncodeToString(state.packetBuffer))
 	}
 }
 
 // TODO(daneroo): Create a New method to store state (serial.Port,escapeFlag,packetBuffer)
-func (state *bufferState) poll(s *serial.Port) ([]entry, error) {
+func (state *decoderState) poll(s *serial.Port) ([]entry, error) {
 	err := writeRequest(s)
 	if err != nil {
 		return nil, err
@@ -40,6 +40,7 @@ func (state *bufferState) poll(s *serial.Port) ([]entry, error) {
 	return extractEntriesFromFrames(frames), nil
 }
 
+// extract entry from each frame, ignore any bad frames (bad length)
 func extractEntriesFromFrames(frames []frame) []entry {
 	entries := make([]entry, 0, len(frames))
 	for _, frame := range frames {
@@ -53,6 +54,7 @@ func extractEntriesFromFrames(frames []frame) []entry {
 	return entries
 }
 
+// extract one entry from one frame, return error if length not supported
 func extractEntryFromFrame(frame frame) (entry, error) {
 	if len(frame) != 278 {
 		return entry{}, fmt.Errorf("Unsupported packet length: %d!=278", len(frame))
@@ -72,8 +74,8 @@ func extractEntryFromFrame(frame frame) (entry, error) {
 }
 
 // TODO(daneroo): perhaps this should be a channel writer...
-// Can accumulate bytes corresponding to more than one frame
-func (state *bufferState) decode(raw []byte) []frame {
+// Can accumulate bytes (in state.buffer) corresponding to more than one serial read.
+func (state *decoderState) decode(raw []byte) []frame {
 	const escapeByte byte = 0x10
 	const packetBegin byte = 0x04
 	const packetEnd byte = 0x03

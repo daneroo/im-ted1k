@@ -40,7 +40,7 @@ func StartLoop(db *sql.DB) error {
 	}
 	log.Printf("Connected to serial port: %s", serialName)
 
-	state := &bufferState{packetBuffer: nil, escapeFlag: false}
+	state := &decoderState{packetBuffer: nil, escapeFlag: false}
 	state.show("-")
 	for {
 		loopStart := time.Now().UTC()
