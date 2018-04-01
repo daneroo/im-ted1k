@@ -2,8 +2,6 @@ package ted1k
 
 import (
 	"database/sql"
-	"encoding/binary"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"reflect"
@@ -18,13 +16,6 @@ type entry struct {
 	stamp string // now.UTC().Format(fmtRFC3339NoZ) no timezone for db insert
 	watts int
 	volts float32
-}
-
-// TODO(daneroo): remove
-func showState(msg string, state *state) {
-	if state.escapeFlag || len(state.packetBuffer) > 0 {
-		log.Printf("%sstate: escape=%v buf=%d %s\n", msg, state.escapeFlag, len(state.packetBuffer), hex.EncodeToString(state.packetBuffer))
-	}
 }
 
 // StartLoop performs the read loop:
@@ -49,115 +40,34 @@ func StartLoop(db *sql.DB) error {
 	}
 	log.Printf("Connected to serial port: %s", serialName)
 
-	state := &state{packetBuffer: nil, escapeFlag: false}
-	showState("-", state)
+	state := &bufferState{packetBuffer: nil, escapeFlag: false}
+	state.show("-")
 	for {
 		loopStart := time.Now().UTC()
 		stamp := time.Now().UTC().Format(fmtRFC3339NoZ) // stamp is set to second (before poll() is called)
-		entry, err := poll(s, state)
+		entries, err := state.poll(s)
 		if err != nil {
 			return err
 		}
-		showState("+", state)
-
-		// stamp should be before calling poll?
-		if entry != nil {
+		state.show("+")
+		if len(entries) == 0 {
+			log.Printf("warning: skipping entry (no entry from poll)\n")
+		} else {
+			if len(entries) > 1 {
+				log.Printf("warning: multiple entries: %d (keeping last)", len(entries))
+			}
+			entry := entries[len(entries)-1]
+			// TODO(daneroo): call insert in goroutine?
 			insertEntry(db, stamp, entry.watts)
 			log.Printf("%s watts: %d volts: %.1f\n", stamp, entry.watts, entry.volts)
-		} else {
-			log.Printf("warning: skipping entry (no entry from poll)\n")
 		}
+
 		if delay := time.Since(loopStart); delay > time.Second {
 			log.Printf("warning: skipping entry (loop took %v>1s)\n", delay)
 		}
 		offset := 10 * time.Millisecond // used to be 0.1s
 		time.Sleep(delayUntilNextSecond(time.Now(), offset))
 	}
-}
-
-// TODO(daneroo): Create a New method to store state (serial.Port,escapeFlag,packetBuffer)
-func poll(s *serial.Port, state *state) (*entry, error) {
-	err := writeRequest(s)
-	if err != nil {
-		return nil, err
-	}
-	raw, err := readResponse(s)
-	if err != nil {
-		return nil, err
-	}
-	entry := extract(raw, state)
-	if entry == nil {
-	}
-	return entry, nil
-}
-
-func extract(raw []byte, state *state) *entry {
-	packets := decode(raw, state)
-	if len(packets) == 0 {
-		return nil
-	}
-	if len(packets) > 1 {
-		log.Printf("warning: extract got multiple packets: %d", len(packets))
-	}
-	decoded := packets[0]
-	if len(decoded) != 278 {
-		log.Printf("raw: %d %s", len(raw), hex.EncodeToString(raw))
-		return nil
-	}
-	/*
-		see [this](https://docs.python.org/2/library/struct.html) to decode python format in ted.py
-			_protocol_len = 278
-			# Offset,  name,             fmt,     scale
-			(82,       'kw_rate',        "<H",    0.0001),
-			(108,      'house_code',     "<B",    1),
-			(247,      'kw',             "<H",    0.01),
-			(251,      'volts',          "<H",    0.1),
-	*/
-	watts := int(binary.LittleEndian.Uint16(decoded[247:249]) * 10)
-	volts := float32(binary.LittleEndian.Uint16(decoded[251:253])) / 10
-	return &entry{watts: watts, volts: volts}
-}
-
-type state struct {
-	stamp        string // now.UTC().Format(fmtRFC3339NoZ) no timezone for db insert
-	packetBuffer []byte
-	escapeFlag   bool
-}
-
-// TODO(daneroo): perhaps this should be a channel writer...
-// Can accumulate bytes corresponding to more than one frame
-func decode(raw []byte, state *state) [][]byte {
-	const escapeByte byte = 0x10
-	const packetBegin byte = 0x04
-	const packetEnd byte = 0x03
-
-	var packets = make([][]byte, 0, 1)
-	for _, b := range raw {
-		if state.escapeFlag {
-			state.escapeFlag = false
-			if b == escapeByte {
-				if state.packetBuffer != nil {
-					state.packetBuffer = append(state.packetBuffer, b)
-				}
-			} else if b == packetBegin {
-				state.packetBuffer = make([]byte, 0, 278) // set expected capacity
-				state.stamp = time.Now().UTC().Format(fmtRFC3339NoZ)
-			} else if b == packetEnd {
-				if state.packetBuffer != nil {
-					packets = append(packets, state.packetBuffer)
-					state.packetBuffer = nil
-					state.stamp = ""
-				}
-			} else {
-				panic(fmt.Sprintf("Unknown escape byte %x", b))
-			}
-		} else if b == escapeByte {
-			state.escapeFlag = true
-		} else {
-			state.packetBuffer = append(state.packetBuffer, b)
-		}
-	}
-	return packets
 }
 
 // conditional on database connection type - Yay SQL

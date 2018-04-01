@@ -5,7 +5,7 @@
 - Store to the database
 
 ## TODO
-- Detect missed loops?
+- run insertEntry() in a goroutine (debug timimg...)
 - Add Config to ted1k, use from Main
     - move getDB to startLoop(creds)
 - separate serial to own file
