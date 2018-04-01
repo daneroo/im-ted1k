@@ -13,18 +13,18 @@ type frame []byte // represents a decoded frame: most likely always len=278
 
 type decoderState struct {
 	// stamp        string // now.UTC().Format(fmtRFC3339NoZ) no timezone for db insert
-	packetBuffer []byte
-	escapeFlag   bool
+	buffer     []byte
+	escapeFlag bool
 }
 
 // TODO(daneroo): remove
 func (state *decoderState) show(msg string) {
-	if state.escapeFlag || len(state.packetBuffer) > 0 {
-		log.Printf("%sstate: escape=%v buf=%d %s\n", msg, state.escapeFlag, len(state.packetBuffer), hex.EncodeToString(state.packetBuffer))
+	if state.escapeFlag || len(state.buffer) > 0 {
+		log.Printf("%sstate: escape=%v buf=%d %s\n", msg, state.escapeFlag, len(state.buffer), hex.EncodeToString(state.buffer))
 	}
 }
 
-// TODO(daneroo): Create a New method to store state (serial.Port,escapeFlag,packetBuffer)
+// TODO(daneroo): Create a New method to store state (serial.Port,escapeFlag,buffer)
 func (state *decoderState) poll(s *serial.Port) ([]entry, error) {
 	err := writeRequest(s)
 	if err != nil {
@@ -85,16 +85,16 @@ func (state *decoderState) decode(raw []byte) []frame {
 		if state.escapeFlag {
 			state.escapeFlag = false
 			if b == escapeByte {
-				if state.packetBuffer != nil {
-					state.packetBuffer = append(state.packetBuffer, b)
+				if state.buffer != nil {
+					state.buffer = append(state.buffer, b)
 				}
 			} else if b == packetBegin {
-				state.packetBuffer = make([]byte, 0, 278) // set expected capacity
+				state.buffer = make([]byte, 0, 278) // set expected capacity
 				// state.stamp = time.Now().UTC().Format(fmtRFC3339NoZ)
 			} else if b == packetEnd {
-				if state.packetBuffer != nil {
-					frames = append(frames, state.packetBuffer)
-					state.packetBuffer = nil
+				if state.buffer != nil {
+					frames = append(frames, state.buffer)
+					state.buffer = nil
 					// state.stamp = ""
 				}
 			} else {
@@ -103,7 +103,7 @@ func (state *decoderState) decode(raw []byte) []frame {
 		} else if b == escapeByte {
 			state.escapeFlag = true
 		} else {
-			state.packetBuffer = append(state.packetBuffer, b)
+			state.buffer = append(state.buffer, b)
 		}
 	}
 	return frames

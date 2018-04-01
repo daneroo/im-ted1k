@@ -29,7 +29,7 @@ func TestFrameDecode(t *testing.T) {
 			t.Errorf("Expected length of %d, but it was %d instead.", tt.rawLen, rawLen)
 		}
 
-		state := &decoderState{packetBuffer: nil, escapeFlag: false}
+		state := &decoderState{buffer: nil, escapeFlag: false}
 		frames := state.decode(tt.raw)
 		if len(frames) == 0 {
 			t.Errorf("Expected frames length > 0, but it was %d instead.", len(frames))
