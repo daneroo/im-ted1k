@@ -23,6 +23,7 @@ type entry struct {
 // - Store to the database,
 // - Calculate delay to make loop every second (with offset)
 // TODO(daneroo): move discovery (invocation) out to main
+// TODO(daneroo): Create a New method to store state/config (sql.DB,serial.Port,decoderState{escapeFlag,buffer})
 func StartLoop(db *sql.DB) error {
 
 	serialName, err := findSerialDevice(nil)
@@ -57,8 +58,10 @@ func StartLoop(db *sql.DB) error {
 				log.Printf("warning: multiple entries: %d (keeping last)", len(entries))
 			}
 			entry := entries[len(entries)-1]
-			// TODO(daneroo): call insert in goroutine?
-			insertEntry(db, stamp, entry.watts)
+
+			// Call insert in goroutine. (This was sometime holding up the main loop.)
+			go insertEntry(db, stamp, entry.watts)
+
 			log.Printf("%s watts: %d volts: %.1f\n", stamp, entry.watts, entry.volts)
 		}
 
@@ -71,7 +74,8 @@ func StartLoop(db *sql.DB) error {
 }
 
 // conditional on database connection type - Yay SQL
-// This is one approach to the dialect specific queries
+// This is one approaches to the dialect specific queries
+// TODO(daneroo): Can we call this just once on setup?
 func insertSQLFormat(db *sql.DB) string {
 	const insertSQLFormatMySQL = "INSERT IGNORE INTO watt (stamp, watt) VALUES ('%s',%d)"
 	const insertSQLFormatSQLITE = "INSERT OR IGNORE INTO watt (stamp, watt) VALUES ('%s',%d)"
@@ -97,10 +101,6 @@ func insertEntry(db *sql.DB, stamp string, watts int) error {
 	insertSQL := fmt.Sprintf(insertSQLFormat, stamp, watts)
 	_, err := db.Exec(insertSQL)
 	if err != nil {
-		// TODO(daneroo): Second option to dialect problem is to catch, the insert duplicate
-		// and safely ignore the error in this case (insert [or] ignore)
-		// MySQL:  Error 1062: Duplicate entry '1966-05-16 01:23:45' for key 'PRIMARY'
-		// Sqlite: UNIQUE constraint failed: watt.stamp
 		log.Println(err)
 		return err
 	}

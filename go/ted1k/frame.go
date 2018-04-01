@@ -24,7 +24,6 @@ func (state *decoderState) show(msg string) {
 	}
 }
 
-// TODO(daneroo): Create a New method to store state (serial.Port,escapeFlag,buffer)
 func (state *decoderState) poll(s *serial.Port) ([]entry, error) {
 	err := writeRequest(s)
 	if err != nil {
@@ -60,6 +59,8 @@ func extractEntryFromFrame(frame frame) (entry, error) {
 		return entry{}, fmt.Errorf("Unsupported packet length: %d!=278", len(frame))
 	}
 	/*
+		original: http://svn.navi.cx/misc/trunk/python/ted.py
+
 		see [this](https://docs.python.org/2/library/struct.html) to decode python format in ted.py
 			_protocol_len = 278
 			# Offset,  name,             fmt,     scale
@@ -67,13 +68,14 @@ func extractEntryFromFrame(frame frame) (entry, error) {
 			(108,      'house_code',     "<B",    1),
 			(247,      'kw',             "<H",    0.01),
 			(251,      'volts',          "<H",    0.1),
+
+		see also (more fields): https://github.com/mloebl/mqtt-ted1000/blob/master/ted.py
 	*/
 	watts := int(binary.LittleEndian.Uint16(frame[247:249]) * 10)
 	volts := float32(binary.LittleEndian.Uint16(frame[251:253])) / 10
 	return entry{watts: watts, volts: volts}, nil
 }
 
-// TODO(daneroo): perhaps this should be a channel writer...
 // Can accumulate bytes (in state.buffer) corresponding to more than one serial read.
 func (state *decoderState) decode(raw []byte) []frame {
 	const escapeByte byte = 0x10
