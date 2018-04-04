@@ -1,8 +1,25 @@
 # Go port for im-ted1k
 
-Just read the port for now.
+- Loop every second
+- Take a measurement from serial port
+- Store to the database
 
-See [this article](http://reprage.com/post/using-golang-to-connect-raspberrypi-and-arduino/).
+## TODO
+- Add Config to ted1k, use from Main
+    - move getDB to startLoop(creds)
+- Main Loop monitor
+    - docker health?
+    - internal restart
+    - Test USB failover
+    - DB pause/restart
+- `.netrc` still required for vgo based build (GitHub API token)
+- Reorganize this document (vgo,docker,..)
+    - vgo and vscode (with `vendor/` and `$GOPATH`)
+- Integrate into `go-ted1k` repo.
+- `vgo` pinned version for mysql driver
+
+## References
+For discussion of serial port access, see [this article](http://reprage.com/post/using-golang-to-connect-raspberrypi-and-arduino/).
 And try to use:
 
 - good https://github.com/tarm/serial
@@ -10,6 +27,91 @@ And try to use:
 - old fork of above https://github.com/huin/goserial
 - also: https://github.com/edartuz/go-serial
 
+## Call Graph
+- StartLoop
+    - poll
+        - writeRequwst() (error)
+        - readResponse() (byte[],error)
+        - extract(raw,state) (*entry)
+            -decode(raw,state) ([][]byte)
+Into:
+    - type frame []byte (guaranteed 278 length)
+    - NewSerial() *serial (port and state)
+    - (*serial) poll ([]entry)
+        - (*serial) writeRequest() (error)
+        - (*serial) readResponse() (byte[],error)
+        - (state *) decode(raw) ([]frame)
+        - extract(frame) entry
+
+## Docker
+```
+docker build -t capture:latest .
+docker run --rm -it --name capture capture:latest
+```
+
+This is a way to build and extract the executable (capture) from the container without starting it:
+```
+docker build -t capture:latest .
+docker create --name capture capture:latest
+docker cp capture:/capture ./capture-linux-amd64
+docker rm capture
+scp -p capture-linux-amd64  daniel@euler:Code/iMetrical/im-ted1k/
+```
+
+### Skip Analysis
+```
+docker run --rm -it mysql bash
+mysql -h euler.imetrical.com ted -e ''
+
+select concat(left(stamp,18),"0") as pertensec,count(*) from watt where stamp>DATE_SUB(NOW(), INTERVAL 3 minute) group by pertensec
+
+select concat(left(stamp,16),":00") as permin,count(*) from watt where stamp>DATE_SUB(NOW(), INTERVAL 15 minute) group by permin
+
+select left(perday,7) as month,min(perday),max(perday),avg(num),avg(num)/864 as percent,86400-avg(num) as missed from (select left(stamp,10) as perday,count(*) as num from watt where stamp>DATE_SUB(NOW(), INTERVAL 731 day) and stamp<DATE_SUB(NOW(), INTERVAL 1 day) group by perday) as thing group by month
+```
+## Vendoring - vgo and hellogopher
+- [hellogopher](https://github.com/cloudflare/hellogopher)
+- [vgo-tour (usage)](https://research.swtch.com/vgo-tour)
+Install vgo
+```
+go get -u golang.org/x/vgo
+```
+
+This is to allow vscode to see vendor'd directory:
+```
+.vscode:   "go.gopath": "/Users/daniellauzon/Code/iMetrical/im-ted1k/go/.GOPATH"
+
+vgo vendor
+```
+
+Just build:
+```
+vgo build ./cmd/capture
+```
+
+Just test:
+```
+vgo test -v ./cmd/capture/ ./ted1k/
+```
+
+Cross compiling for linux
+```
+GOOS=linux GOARCH=amd64 vgo build ./cmd/capture
+```
+
+The system I had was using `govend`: `vendor.yml`, `vendor/`
+- I added an import comment to `main.go:` 
+```
+package main // import "github.com/daneroo/im-ted1k/go"
+```
+- running `vgo build` produces a go.mod file.
+- I then replaced the vgo require for tarm/serial to match the govend vendored copy. (which I can update later)
+```
+// actual time: 2015-11-13T21:30:10Z
+require "github.com/tarm/serial" v0.0.0-20151113213010-edb665337295
+```
+
+## Docker dev
 For dev in docker, mounting local directory, and cwd to /usr/src/ted1k
 
 cd go

@@ -7,10 +7,10 @@ _We lost data from ( 2016-02-14 21:24:21 , 2016-03-12 06:35:35 ]_
 ## Backups
 We backup ted.watt table, compress and send to shannon:/archive/mirror/ted for Crashplan
 ```
-# on euler - in docker: ~4m12s
+# on euler - in docker: ~3m11s
 time docker exec -it imted1k_teddb_1 mysqldump --opt ted watt >ted.watt.`date -u +%Y%m%d.%H%MZ`.sql
 ```
-Now archive it: ~3m23s
+Now archive it: ~3m29s
 ```
 time bzip2 ted.watt.*.sql
 scp -p ted.watt.*.sql.bz2 shannon:/Volumes/Space/archive/mirror/ted
@@ -18,7 +18,7 @@ scp -p ted.watt.*.sql.bz2 shannon:/Volumes/Space/archive/mirror/ted
 
 ## To run
 ```
-docker-compose build
+docker-compose build --pull
 docker-compose up -d
 ```
 
