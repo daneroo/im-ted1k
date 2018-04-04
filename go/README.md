@@ -5,12 +5,8 @@
 - Store to the database
 
 ## TODO
-- run insertEntry() in a goroutine (debug timimg...)
 - Add Config to ted1k, use from Main
     - move getDB to startLoop(creds)
-- separate serial to own file
-- refactor decode/extract API *entry to []entry, use last on multiple
-    - [Immutable slice appending](https://play.golang.org/p/lakKZq5UV-m)
 - Main Loop monitor
     - docker health?
     - internal restart
@@ -65,8 +61,13 @@ scp -p capture-linux-amd64  daniel@euler:Code/iMetrical/im-ted1k/
 ### Skip Analysis
 ```
 docker run --rm -it mysql bash
-mysql -h euler.imetrical.com ted -e 'select concat(left(stamp,18),"0") as pertensec,count(*) from watt where stamp>DATE_SUB(NOW(), INTERVAL 3 minute) group by pertensec'
-mysql -h euler.imetrical.com ted -e 'select concat(left(stamp,16),":00") as permin,count(*) from watt where stamp>DATE_SUB(NOW(), INTERVAL 15 minute) group by permin'
+mysql -h euler.imetrical.com ted -e ''
+
+select concat(left(stamp,18),"0") as pertensec,count(*) from watt where stamp>DATE_SUB(NOW(), INTERVAL 3 minute) group by pertensec
+
+select concat(left(stamp,16),":00") as permin,count(*) from watt where stamp>DATE_SUB(NOW(), INTERVAL 15 minute) group by permin
+
+select left(perday,7) as month,min(perday),max(perday),avg(num),avg(num)/864 as percent,86400-avg(num) as missed from (select left(stamp,10) as perday,count(*) as num from watt where stamp>DATE_SUB(NOW(), INTERVAL 731 day) and stamp<DATE_SUB(NOW(), INTERVAL 1 day) group by perday) as thing group by month
 ```
 ## Vendoring - vgo and hellogopher
 - [hellogopher](https://github.com/cloudflare/hellogopher)
