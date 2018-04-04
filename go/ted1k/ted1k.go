@@ -1,74 +1,109 @@
 package ted1k
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
+	"reflect"
+	"time"
 
 	"github.com/tarm/serial"
 )
 
-const PKT_REQUEST byte = 0xaa
-const ESCAPE byte = 0x10
-const PKT_BEGIN byte = 0x04
-const PKT_END byte = 0x03
+const fmtRFC3339NoZ = "2006-01-02T15:04:05"
 
-func Doit() {
-	log.Printf("const PKT_REQUEST: %q", PKT_REQUEST)
-	log.Printf("const ESCAPE: %x", ESCAPE)
-	log.Printf("const PKT_BEGIN: %x", PKT_BEGIN)
-	log.Printf("const PKT_END: %x", PKT_END)
+type entry struct {
+	stamp string // now.UTC().Format(fmtRFC3339NoZ) no timezone for db insert
+	watts int
+	volts float32
+}
 
-	// omitted ReadTimeout: e.g.: time.Millisecond * 500
-	c := &serial.Config{Name: "/hostdev/ttyUSB0", Baud: 19200}
+// StartLoop performs the read loop:
+// - Take a measurement from serial port (poll()),
+// - Store to the database,
+// - Calculate delay to make loop every second (with offset)
+// TODO(daneroo): move discovery (invocation) out to main
+// TODO(daneroo): Create a New method to store state/config (sql.DB,serial.Port,decoderState{escapeFlag,buffer})
+func StartLoop(db *sql.DB) error {
+
+	serialName, err := findSerialDevice(nil)
+	if err != nil {
+		return err
+	}
+	log.Printf("Discovered serial port: %s", serialName)
+
+	// ReadTimeout: makes the port.Read() non-blocking, causing a more sophisticated readRresponse()
+	//  smallest possible value: 0.1s time.Millisecond * 100,  1 deciSecond
+	c := &serial.Config{Name: serialName, Baud: 19200, ReadTimeout: time.Millisecond * 100}
 	s, err := serial.OpenPort(c)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	log.Printf("Connected to serial port: %s", serialName)
 
-	n, err := s.Write([]byte{PKT_REQUEST})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// log.Printf("c %q", c)
-	// raw := []byte("\x10\x04\x1a\x02\xc3\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x1d\x01\x00\x00\x84\x03\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x1c\x02\xdd\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\b\x05\x00\xe8\x03\x00\xd3\x00\x00TED \x00\x00\x00\x00\x00\xb7\v\x0f'\x0f'\x0f'\xe8\x03\xdc\x05\x9e\x04\x05\x00\xb4\x04\x02\x00[\x04U\xab\x05U`\x00\x05\x002\x04A\x00\xc5\x10\x10\x00\x00\x89\x1b\x00\x00\x8d\x9d\x00\x000\x15\x05\x03\x95\xce\xd6\x01\x05W\t\xdc\x03\xf6\x02X\tw\x04v\x03Y\tE\x04M\x03Z\t\xe5\x03\xfd\x02[\t\xb5\x03\xd5\x02J\t\x8a\x03\xb2\x02K\tE\x03\x86\x02L\t\xb9\x03\xd9\x02Q\t\xe7\x03\xff\x02R\t-\x049\x03S\t\xf9\x03\x0e\x03T\t%\x042\x03(\x00\x02\x00\xae\x04\x8c\x02\xb0\x02\x88\x03\x04$a\x00\x00\x00\x00\x00\x00Σh\x00\x00\x00\x00\x00\x1c\x02\x10\x03")
-	// n = len(raw)
-	raw := make([]byte, 4096)
-	n, err = s.Read(raw)
-	if err != nil {
-		log.Fatal(err)
-	}
-	raw = raw[:n]
-	log.Printf("raw: n:%d raw[:n]:%q", n, raw[:n])
-
-	decoded := make([]byte, 0)
-	escape_flag := false
-	for _, b := range raw {
-		switch {
-		case escape_flag:
-			escape_flag = false
-			switch b {
-			case ESCAPE:
-				log.Println("Double Escape")
-				decoded = append(decoded, b)
-			case PKT_BEGIN:
-				log.Println("Reset PKT_BEGIN")
-				decoded = make([]byte, 0)
-			case PKT_END:
-				log.Println("Reset PKT_END")
-				// decoded = make([]byte)
-			default:
-				panic(fmt.Sprintf("Unknown escape byte %x", b))
-			}
-		case b == ESCAPE:
-			log.Printf("Escape %x", b)
-			escape_flag = true
-		default:
-			log.Printf("Append %x", b)
-			decoded = append(decoded, b)
+	state := &decoderState{buffer: nil, escapeFlag: false}
+	state.show("-")
+	for {
+		loopStart := time.Now().UTC()
+		stamp := time.Now().UTC().Format(fmtRFC3339NoZ) // stamp is set to second (before poll() is called)
+		entries, err := state.poll(s)
+		if err != nil {
+			return err
 		}
+		state.show("+")
+		if len(entries) == 0 {
+			log.Printf("warning: skipping entry (no entry from poll)\n")
+		} else {
+			if len(entries) > 1 {
+				log.Printf("warning: multiple entries: %d (keeping last)", len(entries))
+			}
+			entry := entries[len(entries)-1]
+
+			// Call insert in goroutine. (This was sometime holding up the main loop.)
+			go insertEntry(db, stamp, entry.watts)
+
+			log.Printf("%s watts: %d volts: %.1f\n", stamp, entry.watts, entry.volts)
+		}
+
+		if delay := time.Since(loopStart); delay > time.Second {
+			log.Printf("warning: skipping entry (loop took %v>1s)\n", delay)
+		}
+		offset := 10 * time.Millisecond // used to be 0.1s
+		time.Sleep(delayUntilNextSecond(time.Now(), offset))
+	}
+}
+
+// conditional on database connection type - Yay SQL
+// This is one approaches to the dialect specific queries
+// TODO(daneroo): Can we call this just once on setup?
+func insertSQLFormat(db *sql.DB) string {
+	const insertSQLFormatMySQL = "INSERT IGNORE INTO watt (stamp, watt) VALUES ('%s',%d)"
+	const insertSQLFormatSQLITE = "INSERT OR IGNORE INTO watt (stamp, watt) VALUES ('%s',%d)"
+
+	driverName := reflect.ValueOf(db.Driver()).Type().String()
+	// log.Printf("db.Driver.Name: %s\n", driverName)
+	switch driverName {
+	case "*mysql.MySQLDriver":
+		return insertSQLFormatMySQL
+	case "*sqlite3.SQLiteDriver":
+		return insertSQLFormatSQLITE
+	default:
+		log.Fatalf("Could not create insert statement for unknown driver: %s", driverName)
+		return ""
 	}
 
-	log.Printf("decoded: n:%d decoded[]:%q\n", len(decoded), decoded)
+}
 
+// insertEntry inserts one entry - ignores if duplicate key (stamp)
+func insertEntry(db *sql.DB, stamp string, watts int) error {
+	// const insertSQLFormat = "INSERT INTO watt (stamp, watt) VALUES ('%s',%d)"
+	insertSQLFormat := insertSQLFormat(db)
+	insertSQL := fmt.Sprintf(insertSQLFormat, stamp, watts)
+	_, err := db.Exec(insertSQL)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	return nil
 }
