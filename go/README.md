@@ -60,6 +60,10 @@ scp -p capture-linux-amd64  daniel@euler:Code/iMetrical/im-ted1k/
 
 ### Skip Analysis
 ```
+# Which minutes have less than 60 samples in the last DAY
+docker run --rm -it mysql mysql -h euler.imetrical.com ted -e 'select concat(left(stamp,16),":00") as permin,count(*) as n  from watt where stamp>DATE_SUB(NOW(), INTERVAL 1440 minute) group by permin having n<60'
+
+# broken down:...
 docker run --rm -it mysql bash
 mysql -h euler.imetrical.com ted -e ''
 
