@@ -10,11 +10,8 @@ run_query(){
   docker run --rm -it mysql mysql -h euler.imetrical.com ted -e "$query"
 }
 
-run_query 'Missing samples in last day' 'select count(*) as samples, 86400-count(*) as missing from watt where stamp>DATE_SUB(NOW(), INTERVAL 24 HOUR)'
+run_query 'Missing samples in last day' 'select DATE_SUB(NOW(), INTERVAL 24 HOUR) as since, count(*) as samples, 86400-count(*) as missing from watt where stamp>DATE_SUB(NOW(), INTERVAL 24 HOUR)'
 
-# missing in day
-run_query 'Missing in days of last week' 'select concat(substring(stamp,1,11),"00:00:00") as day, round(avg(watt),0), count(*) as samples,86400-count(*) as missing from watt where stamp>DATE_SUB(NOW(), INTERVAL 7 DAY) group by day having missing>0'
-# missing in hour
-run_query 'Missing in hours of last day' 'select concat(substring(stamp,1,14),"00:00") as hour, round(avg(watt),0), count(*) as samples,3600-count(*) as missing from watt where stamp>DATE_SUB(NOW(), INTERVAL 24 HOUR) group by hour having missing>0'
-# missing in minute
-run_query 'Missing in minutes of last day' 'select concat(substring(stamp,1,17),"00") as minute, round(avg(watt),0), count(*) as samples,60-count(*) as missing from watt where stamp>DATE_SUB(NOW(), INTERVAL 24 HOUR) group by minute having missing>0'
+run_query 'Missing samples in last week - group by day' 'select concat(substring(stamp,1,11),"00:00:00") as day, round(avg(watt),0), count(*) as samples,86400-count(*) as missing from watt where stamp>DATE_SUB(NOW(), INTERVAL 7 DAY) group by day having missing>0'
+run_query 'Missing samples in last day - group by hour' 'select concat(substring(stamp,1,14),"00:00") as hour, round(avg(watt),0), count(*) as samples,3600-count(*) as missing from watt where stamp>DATE_SUB(NOW(), INTERVAL 24 HOUR) group by hour having missing>0'
+# run_query 'Missing samples in last day - group by minute' 'select concat(substring(stamp,1,17),"00") as minute, round(avg(watt),0), count(*) as samples,60-count(*) as missing from watt where stamp>DATE_SUB(NOW(), INTERVAL 24 HOUR) group by minute having missing>0'
