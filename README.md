@@ -1,19 +1,20 @@
 # iMetrical-Energy TED1K
 
+_2018-04-04 Moved to go (vgo) based capture_
 _2016-09-17 Adjusted monitoring and docker-compose v2_  
 _2016-03-12 Moving back to x86 (euler, old cantor/goedel)_ 
 _We lost data from ( 2016-02-14 21:24:21 , 2016-03-12 06:35:35 ]_
 
 ## Backups
-We backup ted.watt table, compress and send to shannon:/archive/mirror/ted for Crashplan
+We backup ted.watt table, compress and send to dirac:/archive/mirror/ted for Backblaze
 ```
-# on euler - in docker: ~3m11s
+# on euler - in docker: ~4m33s
 time docker exec -it imted1k_teddb_1 mysqldump --opt ted watt >ted.watt.`date -u +%Y%m%d.%H%MZ`.sql
 ```
-Now archive it: ~3m29s
+Now archive it: ~6m13s
 ```
 time bzip2 ted.watt.*.sql
-scp -p ted.watt.*.sql.bz2 shannon:/Volumes/Space/archive/mirror/ted
+scp -p ted.watt.*.sql.bz2 dirac:/Volumes/Space/archive/mirror/ted
 ```
 
 ## To run
