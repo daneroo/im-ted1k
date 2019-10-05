@@ -1,13 +1,14 @@
 #
 # ted1k Docker image shared by all containers (php,python,shell scripts)
+#  feeds.php was ported to PHP7
+
 # Use official docker python image
 #  https://hub.docker.com/_/python/
 #
 
-# Pull base image.
-# Now using pip/requirements not ubuntu packages for python: 
-# FROM hypriot/rpi-python
-FROM python:2.7
+# As of python:2.7.16, this would be buildpack-deps:buster based image 
+#  moving past 2.7.15 breaks MySQL-python==1.2.5 requirement
+FROM python:2.7.15
 
 # Set timezone 
 RUN \ 
@@ -18,13 +19,13 @@ RUN \
 RUN \
   apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y \
-	build-essential \
-	curl \
-	libmysqlclient-dev \
-	mysql-client \
-	php5-cli \
-	php5-mysql \
-	python-dev
+  build-essential \
+  curl \
+  default-libmysqlclient-dev \
+  default-mysql-client \
+  php-cli \
+  php-mysql \
+  python-dev
 
 # Add our pip dependancy file
 ADD src/requirements.txt /src/requirements.txt

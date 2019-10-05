@@ -12,9 +12,10 @@ if ($scope>4) $scope = fmod($scope,5);
 if ($scope<0) $scope = fmod(intval(time()/10),5);
 
 // Connect to db
-$dbname = 'ted'; $dbhost = 'teddb'; $dbuser = ''; $dbpass = '';
-$conn = mysql_connect($dbhost, $dbuser, $dbpass) or die ('Error connecting to mysql');
-mysql_select_db($dbname);
+$dbname = 'ted'; $dbhost = 'teddb'; $dbuser = 'root'; $dbpass = '';
+// updated for php7
+$conn = mysqli_connect($dbhost, $dbuser, $dbpass) or die ('Error connecting to mysql');
+mysqli_select_db($conn, $dbname);
 
 $feeds = array(
                array( 'name'=>"Live",  'scopeId'=>0, 'aggregate'=>array("watt",1),
@@ -36,14 +37,15 @@ function aggregateForFeed($table,$samples) {
     return $query;
 }
 function getAggRow($sql) {
-    $result = mysql_query($sql) or die('Query failed: ' . mysql_error());
-    while ($row = mysql_fetch_array($result, MYSQL_NUM)) {
+    global $conn;
+    $result = mysqli_query($conn, $sql) or die('Query failed: ' . mysql_error());
+    while ($row = mysqli_fetch_array($result, MYSQLI_NUM)) {
         $minStamp = substr($row[0],0,10).'T'.substr($row[0],-8).'Z';
         $maxStamp = substr($row[1],0,10).'T'.substr($row[1],-8).'Z';
         $avgwatt = $row[2];
         break;
     }
-    mysql_free_result($result);
+    mysqli_free_result($result);
     return array($minStamp,$maxStamp,$avgwatt);
 }
 
@@ -59,15 +61,16 @@ function queryForTableSince($table,$since,$samples) {
 
 // this function also return le last stamp
 function entriesForQuery($sql,$formatter) {
-    $result = mysql_query($sql) or die('Query failed: ' . mysql_error());
+    global $conn;
+    $result = mysqli_query($conn, $sql) or die('Query failed: ' . mysql_error());
     $lastStamp = '';
-    while ($row = mysql_fetch_array($result, MYSQL_NUM)) {
+    while ($row = mysqli_fetch_array($result, MYSQLI_NUM)) {
         $stamp = substr($row[0],0,10).'T'.substr($row[0],-8).'Z';
         $lastStamp=$row[0];
         $watt = $row[1];
         $formatter($stamp,$watt);
     }
-    mysql_free_result($result);
+    mysqli_free_result($result);
     return $lastStamp;
 }
 
@@ -145,5 +148,5 @@ foreach ($feeds as $feed) {
 echo "</feeds>\n";
 
 
-mysql_close($conn);
+mysqli_close($conn);
 ?>
