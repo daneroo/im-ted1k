@@ -47,99 +47,18 @@ Into:
         - (state *) decode(raw) ([]frame)
         - extract(frame) entry
 
+## Update dependancies
+
+```bash
+go get -u ...
+```
+
 ## Docker
 
 ```bash
 docker build -t capture:latest .
 docker run --rm -it --name capture capture:latest
 ```
-
-This is a way to build and extract the executable (capture) from the container without starting it:
-
-```bash
-docker build -t capture:latest .
-docker create --name capture capture:latest
-docker cp capture:/capture ./capture-linux-amd64
-docker rm capture
-scp -p capture-linux-amd64  daniel@euler:Code/iMetrical/im-ted1k/
-```
-
-### Skip Analysis
-
-```bash
-# Which minutes have less than 60 samples in the last DAY
-docker run --rm -it mysql mysql -h euler.imetrical.com ted -e 'select concat(left(stamp,16),":00") as permin,count(*) as n  from watt where stamp>DATE_SUB(NOW(), INTERVAL 1440 minute) group by permin having n<60'
-
-# broken down:...
-docker run --rm -it mysql bash
-mysql -h euler.imetrical.com ted -e ''
-
-select concat(left(stamp,18),"0") as pertensec,count(*) from watt where stamp>DATE_SUB(NOW(), INTERVAL 3 minute) group by pertensec
-
-select concat(left(stamp,16),":00") as permin,count(*) from watt where stamp>DATE_SUB(NOW(), INTERVAL 15 minute) group by permin
-
-select left(perday,7) as month,min(perday),max(perday),avg(num),avg(num)/864 as percent,86400-avg(num) as missed from (select left(stamp,10) as perday,count(*) as num from watt where stamp>DATE_SUB(NOW(), INTERVAL 731 day) and stamp<DATE_SUB(NOW(), INTERVAL 1 day) group by perday) as thing group by month
-```
-
-## Vendoring - vgo and hellogopher
-
-- [hellogopher](https://github.com/cloudflare/hellogopher)
-- [vgo-tour (usage)](https://research.swtch.com/vgo-tour)
-
-Install vgo
-
-```bash
-go get -u golang.org/x/vgo
-```
-
-This is to allow vscode to see vendor'd directory:
-
-```bash
-.vscode:   "go.gopath": "/Users/daniellauzon/Code/iMetrical/im-ted1k/go/.GOPATH"
-
-vgo vendor
-```
-
-Just build:
-
-```bash
-vgo build ./cmd/capture
-```
-
-Just test:
-
-```bash
-vgo test -v ./cmd/capture/ ./ted1k/
-```
-
-Cross compiling for linux
-
-```bash
-GOOS=linux GOARCH=amd64 vgo build ./cmd/capture
-```
-
-The system I had was using `govend`: `vendor.yml`, `vendor/`
-
-- I added an import comment to `main.go:`
-
-```go
-package main // import "github.com/daneroo/im-ted1k/go"
-```
-
-- running `vgo build` produces a go.mod file.
-- I then replaced the vgo require for tarm/serial to match the govend vendored copy. (which I can update later)
-
-```bash
-// actual time: 2015-11-13T21:30:10Z
-require "github.com/tarm/serial" v0.0.0-20151113213010-edb665337295
-```
-
-## Docker dev
-
-For dev in docker, mounting local directory, and cwd to /usr/src/ted1k
-
-cd go
-docker run -it --rm --privileged -v /dev:/hostdev -v `pwd`:/usr/src/ted1k -w /usr/src/ted1k  golang
 
 See [this](https://docs.python.org/2/library/struct.html) to decode python format in ted.py
 
