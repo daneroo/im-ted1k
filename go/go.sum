@@ -1,0 +1,7 @@
+github.com/daneroo/im-ted1k v2.0.0+incompatible h1:A2uQ0a5wZYkPzAy15VVMGpt7z9X9+QGELYEyrLQ1O3M=
+github.com/go-sql-driver/mysql v0.0.0-20161201115036-a0583e0143b1 h1:eskRz4xKn+voBxX43DXKmRUEpvcQkqN8FeGFEO3j89w=
+github.com/go-sql-driver/mysql v0.0.0-20161201115036-a0583e0143b1/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=
+github.com/mattn/go-sqlite3 v1.6.0 h1:TDwTWbeII+88Qy55nWlof0DclgAtI4LqGujkYMzmQII=
+github.com/mattn/go-sqlite3 v1.6.0/go.mod h1:FPy6KqzDD04eiIsT53CuJW3U88zkxoIYsOqkbpncsNc=
+github.com/tarm/serial v0.0.0-20180114052751-eaafced92e96 h1:pLss0TM/G46eE2p8NIRYIlB12vrPvWXiqDoCKA52wwQ=
+github.com/tarm/serial v0.0.0-20180114052751-eaafced92e96/go.mod h1:kDXzergiv9cbyO7IOYJZWg1U88JhDg3PB6klq9Hg2pA=

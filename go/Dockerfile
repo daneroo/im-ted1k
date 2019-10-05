@@ -1,17 +1,23 @@
-FROM golang:1.10 as build
+FROM golang:1.13 as build
 
 WORKDIR $GOPATH/src/github.com/daneroo/im-ted1k/go
+
+# Let's cache modules retrieval - those don't change so often
+COPY go.mod .
+COPY go.sum .
+RUN go mod download
+
 COPY . .
 
-RUN go version && go get -u -v golang.org/x/vgo
+RUN go version
 
-# to avoid GitHUb API rate limiting
-RUN cp dot.netrc $HOME/.netrc
+RUN go install ./...
 
-# vgo is hard-coded to use clang: https://github.com/golang/go/issues/23965
-RUN CC=gcc vgo install ./...
-
-# Base images: scratch 2.2MB alpine:6.3MB distroless:18MB
-FROM gcr.io/distroless/base
+# Base images: scratch 2.2MB alpine:6.3MB distroless:18MB ubuntu:19.04:79MB
+# using ubuntu:19.04 (?because of glibc6 dependancy)
+# FROM gcr.io/distroless/base
+# FROM alpine
+FROM ubuntu:19.04
 COPY --from=build /go/bin/capture /
+
 CMD ["/capture"]
