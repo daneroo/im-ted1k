@@ -7,7 +7,7 @@ run_query(){
   query=$2
   # echo $query
   echo '-=-=' $1 '=-=-'
-  docker run --rm -it mysql mysql -h darwin.imetrical.com ted -e "$query"
+  docker run --rm -it mysql:5.7 mysql -h darwin.imetrical.com ted -e "$query"
 }
 
 run_query 'Missing samples in last day' 'select DATE_SUB(NOW(), INTERVAL 24 HOUR) as since, count(*) as samples, 86400-count(*) as missing from watt where stamp>DATE_SUB(NOW(), INTERVAL 24 HOUR)'
