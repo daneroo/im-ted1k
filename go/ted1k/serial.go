@@ -14,7 +14,7 @@ import (
 
 var defaultSerialDeviceBaseDirs = []string{"/hostdev", "/dev"}
 
-// Travers directories, and look for usb serial devices (Linux and MacOS)
+// Traverse directories, and look for usb serial devices (Linux and MacOS)
 func findSerialDevice(baseDirs []string) (string, error) {
 	if len(baseDirs) == 0 {
 		baseDirs = defaultSerialDeviceBaseDirs
