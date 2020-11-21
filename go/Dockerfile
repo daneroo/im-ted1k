@@ -14,10 +14,10 @@ RUN go version
 RUN go install ./...
 
 # Base images: scratch 2.2MB alpine:6.3MB distroless:18MB ubuntu:19.04:79MB
-# using ubuntu:19.04 (?because of glibc6 dependancy)
+# using ubuntu:20.04 (?because of glibc6 dependancy)
 # FROM gcr.io/distroless/base
 # FROM alpine
-FROM ubuntu:19.04
+FROM ubuntu:20.04
 COPY --from=build /go/bin/capture /
 
 CMD ["/capture"]
