@@ -14,6 +14,10 @@ type NatsWriter struct {
 	c *nats.EncodedConn
 }
 
+const natsConnectionName = "capture.ted1k"
+const topic = "im.qcic.heartbeat"
+const host = natsConnectionName
+
 // NewNatsWriter is the constructor
 func NewNatsWriter() *NatsWriter {
 	// nats-pub im.qcic.heartbeat '{"stamp":"2020-11-20T21:00:01Z","host":"cli","text":"coco"}'
@@ -24,6 +28,7 @@ func NewNatsWriter() *NatsWriter {
 		// RetryOnFailedConnect is on master, ut not released
 		// nats.RetryOnFailedConnect(true)
 		nats.MaxReconnects(-1), // 60 is the default
+		nats.Name(natsConnectionName),
 	)
 	if err != nil {
 		log.Printf("Unable to connect to Nats: %v\n", url)
@@ -33,9 +38,6 @@ func NewNatsWriter() *NatsWriter {
 
 	return &NatsWriter{c: c}
 }
-
-const topic = "im.qcic.heartbeat"
-const host = "capture.ted1k"
 
 // WriteMessage publishes a message (not part of EntryWriter interface)
 func (w NatsWriter) WriteMessage(text string) error {
