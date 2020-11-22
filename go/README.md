@@ -6,18 +6,16 @@
 
 ## TODO
 
+- Combine EntryWriters
 - Add Config to ted1k, use from Main
+  - nats url, db creds
   - move getDB to startLoop(creds)
 - Main Loop monitor
   - docker health?
   - internal restart
   - Test USB failover
   - DB pause/restart
-- `.netrc` still required for vgo based build (GitHub API token)
-- Reorganize this document (vgo,docker,..)
-  - vgo and vscode (with `vendor/` and `$GOPATH`)
-- Integrate into `go-ted1k` repo.
-- `vgo` pinned version for mysql driver
+- Integrate into `go-ted1k` repo or vice verse.
 
 ## References
 
@@ -28,30 +26,6 @@ And try to use:
 - previous <https://github.com/tarm/goserial>
 - old fork of above <https://github.com/huin/goserial>
 - also: <https://github.com/edartuz/go-serial>
-
-## Call Graph
-
-- StartLoop
-  - poll
-    - writeRequwst() (error)
-    - readResponse() (byte[],error)
-    - extract(raw,state) (*entry)
-      -decode(raw,state) ([][]byte)
-
-Into:
-    - type frame []byte (guaranteed 278 length)
-    - NewSerial() *serial (port and state)
-    - (*serial) poll ([]entry)
-        - (*serial) writeRequest() (error)
-        - (*serial) readResponse() (byte[],error)
-        - (state *) decode(raw) ([]frame)
-        - extract(frame) entry
-
-## Update dependancies
-
-```bash
-go get -u ...
-```
 
 ## Docker
 
