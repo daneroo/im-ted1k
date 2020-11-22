@@ -2,7 +2,6 @@ package ted1k
 
 import (
 	"encoding/binary"
-	"encoding/hex"
 	"fmt"
 	"log"
 
@@ -12,19 +11,11 @@ import (
 type frame []byte // represents a decoded frame: most likely always len=278
 
 type decoderState struct {
-	// stamp        string // now.UTC().Format(fmtRFC3339NoZ) no timezone for db insert
 	buffer     []byte
 	escapeFlag bool
 }
 
-// TODO(daneroo): remove
-func (state *decoderState) show(msg string) {
-	if state.escapeFlag || len(state.buffer) > 0 {
-		log.Printf("%sstate: escape=%v buf=%d %s\n", msg, state.escapeFlag, len(state.buffer), hex.EncodeToString(state.buffer))
-	}
-}
-
-func (state *decoderState) poll(s *serial.Port) ([]entry, error) {
+func (state *decoderState) poll(s *serial.Port) ([]Entry, error) {
 	err := writeRequest(s)
 	if err != nil {
 		return nil, err
@@ -40,8 +31,8 @@ func (state *decoderState) poll(s *serial.Port) ([]entry, error) {
 }
 
 // extract entry from each frame, ignore any bad frames (bad length)
-func extractEntriesFromFrames(frames []frame) []entry {
-	entries := make([]entry, 0, len(frames))
+func extractEntriesFromFrames(frames []frame) []Entry {
+	entries := make([]Entry, 0, len(frames))
 	for _, frame := range frames {
 		entry, err := extractEntryFromFrame(frame)
 		if err != nil {
@@ -54,9 +45,9 @@ func extractEntriesFromFrames(frames []frame) []entry {
 }
 
 // extract one entry from one frame, return error if length not supported
-func extractEntryFromFrame(frame frame) (entry, error) {
+func extractEntryFromFrame(frame frame) (Entry, error) {
 	if len(frame) != 278 {
-		return entry{}, fmt.Errorf("Unsupported packet length: %d!=278", len(frame))
+		return Entry{}, fmt.Errorf("Unsupported packet length: %d!=278", len(frame))
 	}
 	/*
 		original: http://svn.navi.cx/misc/trunk/python/ted.py
@@ -73,7 +64,7 @@ func extractEntryFromFrame(frame frame) (entry, error) {
 	*/
 	watts := int(binary.LittleEndian.Uint16(frame[247:249]) * 10)
 	volts := float32(binary.LittleEndian.Uint16(frame[251:253])) / 10
-	return entry{watts: watts, volts: volts}, nil
+	return Entry{Watts: watts, Volts: volts}, nil
 }
 
 // Can accumulate bytes (in state.buffer) corresponding to more than one serial read.
@@ -92,12 +83,10 @@ func (state *decoderState) decode(raw []byte) []frame {
 				}
 			} else if b == packetBegin {
 				state.buffer = make([]byte, 0, 278) // set expected capacity
-				// state.stamp = time.Now().UTC().Format(fmtRFC3339NoZ)
 			} else if b == packetEnd {
 				if state.buffer != nil {
 					frames = append(frames, state.buffer)
 					state.buffer = nil
-					// state.stamp = ""
 				}
 			} else {
 				panic(fmt.Sprintf("Unknown escape byte %x", b))

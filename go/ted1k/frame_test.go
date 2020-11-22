@@ -72,11 +72,11 @@ func TestFrameExtract(t *testing.T) {
 		if tt.err != "" && err.Error() != tt.err {
 			t.Errorf("Expected error to be %v, but it was %v instead.", tt.err, err)
 		}
-		if entry.watts != tt.watts {
-			t.Errorf("Expected watts to be %d, but it was %d instead.", tt.watts, entry.watts)
+		if entry.Watts != tt.watts {
+			t.Errorf("Expected watts to be %d, but it was %d instead.", tt.watts, entry.Watts)
 		}
-		if entry.volts != tt.volts {
-			t.Errorf("Expected volts to be %f, but it was %f instead.", tt.volts, entry.volts)
+		if entry.Volts != tt.volts {
+			t.Errorf("Expected volts to be %f, but it was %f instead.", tt.volts, entry.Volts)
 		}
 	}
 }
@@ -90,9 +90,9 @@ func TestFrameExtractMultiple(t *testing.T) {
 	t.Log("Expect log warning: Unsupported packet length: 35!=278")
 	entries := extractEntriesFromFrames(frames)
 	// t.Logf("entry:%#v \n", entries)
-	expected := []entry{
-		{watts: 400, volts: 119.8},
-		{watts: 950, volts: 120.2},
+	expected := []Entry{
+		{Watts: 400, Volts: 119.8},
+		{Watts: 950, Volts: 120.2},
 	}
 	if !reflect.DeepEqual(expected, entries) {
 		t.Errorf("Expected entries to be %v, but it was %v instead.", expected, entries)

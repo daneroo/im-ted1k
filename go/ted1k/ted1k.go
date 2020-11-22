@@ -1,21 +1,23 @@
 package ted1k
 
 import (
-	"database/sql"
-	"fmt"
 	"log"
-	"reflect"
 	"time"
 
 	"github.com/tarm/serial"
 )
 
-const fmtRFC3339NoZ = "2006-01-02T15:04:05"
+// Entry represents a sensor reading at a specific time
+type Entry struct {
+	Stamp time.Time `json:"stamp"`
+	Watts int       `json:"watt"`
+	Volts float32   `json:"-"` // or "volt,omitempty"
+}
 
-type entry struct {
-	stamp string // now.UTC().Format(fmtRFC3339NoZ) no timezone for db insert
-	watts int
-	volts float32
+// EntryWriter is the interface for "handling a single entry"
+type EntryWriter interface {
+	Write(e Entry) (err error)
+	Close() (err error)
 }
 
 // StartLoop performs the read loop:
@@ -24,7 +26,7 @@ type entry struct {
 // - Calculate delay to make loop every second (with offset)
 // TODO(daneroo): move discovery (invocation) out to main
 // TODO(daneroo): Create a New method to store state/config (sql.DB,serial.Port,decoderState{escapeFlag,buffer})
-func StartLoop(db *sql.DB) error {
+func StartLoop(writers []EntryWriter) error {
 
 	serialName, err := findSerialDevice(nil)
 	if err != nil {
@@ -32,8 +34,8 @@ func StartLoop(db *sql.DB) error {
 	}
 	log.Printf("Discovered serial port: %s", serialName)
 
-	// ReadTimeout: makes the port.Read() non-blocking, causing a more sophisticated readRresponse()
-	//  smallest possible value: 0.1s time.Millisecond * 100,  1 deciSecond
+	// ReadTimeout: makes the port.Read() non-blocking, causing a more sophisticated readResponse()
+	// smallest possible value: 0.1s time.Millisecond * 100
 	c := &serial.Config{Name: serialName, Baud: 19200, ReadTimeout: time.Millisecond * 100}
 	s, err := serial.OpenPort(c)
 	if err != nil {
@@ -42,15 +44,13 @@ func StartLoop(db *sql.DB) error {
 	log.Printf("Connected to serial port: %s", serialName)
 
 	state := &decoderState{buffer: nil, escapeFlag: false}
-	state.show("-")
 	for {
 		loopStart := time.Now().UTC()
-		stamp := time.Now().UTC().Format(fmtRFC3339NoZ) // stamp is set to second (before poll() is called)
+		stamp := time.Now().UTC() // .Format(fmtRFC3339NoZ) // stamp is set to second (before poll() is called)
 		entries, err := state.poll(s)
 		if err != nil {
 			return err
 		}
-		state.show("+")
 		if len(entries) == 0 {
 			log.Printf("warning: skipping entry (no entry from poll)\n")
 		} else {
@@ -58,11 +58,14 @@ func StartLoop(db *sql.DB) error {
 				log.Printf("warning: multiple entries: %d (keeping last)", len(entries))
 			}
 			entry := entries[len(entries)-1]
+			// state.poll does not set the stamp
+			entry.Stamp = stamp
+			// Call handler in goroutine. (This was sometime holding up the main loop.)
+			for _, writer := range writers {
+				go writer.Write(entry)
+			}
 
-			// Call insert in goroutine. (This was sometime holding up the main loop.)
-			go insertEntry(db, stamp, entry.watts)
-
-			log.Printf("%s watts: %d volts: %.1f\n", stamp, entry.watts, entry.volts)
+			log.Printf("%s watts: %d volts: %.1f\n", stamp, entry.Watts, entry.Volts)
 		}
 
 		if delay := time.Since(loopStart); delay > time.Second {
@@ -71,39 +74,4 @@ func StartLoop(db *sql.DB) error {
 		offset := 10 * time.Millisecond // used to be 0.1s
 		time.Sleep(delayUntilNextSecond(time.Now(), offset))
 	}
-}
-
-// conditional on database connection type - Yay SQL
-// This is one approaches to the dialect specific queries
-// TODO(daneroo): Can we call this just once on setup?
-func insertSQLFormat(db *sql.DB) string {
-	const insertSQLFormatMySQL = "INSERT IGNORE INTO watt (stamp, watt) VALUES ('%s',%d)"
-	const insertSQLFormatSQLITE = "INSERT OR IGNORE INTO watt (stamp, watt) VALUES ('%s',%d)"
-
-	driverName := reflect.ValueOf(db.Driver()).Type().String()
-	// log.Printf("db.Driver.Name: %s\n", driverName)
-	switch driverName {
-	case "*mysql.MySQLDriver":
-		return insertSQLFormatMySQL
-	case "*sqlite3.SQLiteDriver":
-		return insertSQLFormatSQLITE
-	default:
-		log.Fatalf("Could not create insert statement for unknown driver: %s", driverName)
-		return ""
-	}
-
-}
-
-// insertEntry inserts one entry - ignores if duplicate key (stamp)
-func insertEntry(db *sql.DB, stamp string, watts int) error {
-	// const insertSQLFormat = "INSERT INTO watt (stamp, watt) VALUES ('%s',%d)"
-	insertSQLFormat := insertSQLFormat(db)
-	insertSQL := fmt.Sprintf(insertSQLFormat, stamp, watts)
-	_, err := db.Exec(insertSQL)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-
-	return nil
 }
