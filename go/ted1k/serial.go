@@ -22,7 +22,7 @@ func findSerialDevice(baseDirs []string) (string, error) {
 	for _, baseDir := range baseDirs {
 		contents, _ := ioutil.ReadDir(baseDir)
 
-		// Look for what is mostly likely the Arduino device
+		// Look for what is mostly likely our device
 		for _, f := range contents {
 			if strings.Contains(f.Name(), "tty.usbserial") ||
 				strings.Contains(f.Name(), "ttyUSB") {
@@ -30,8 +30,7 @@ func findSerialDevice(baseDirs []string) (string, error) {
 			}
 		}
 	}
-	// Have not been able to find a USB device that 'looks'
-	// like an Arduino.
+	// Have not been able to find a USB device that 'looks' like my USB device
 	return "", fmt.Errorf("Unable to find a serial device in %q", baseDirs)
 }
 
