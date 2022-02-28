@@ -23,7 +23,7 @@ func NewNatsWriter() *NatsWriter {
 	// nats-pub im.qcic.heartbeat '{"stamp":"2020-11-20T21:00:01Z","host":"cli","text":"coco"}'
 	// url := nats.DefaultURL
 	// url := "nats://127.0.0.1:4222"
-	url := "nats://nats.dl.imetrical.com:4222"
+	url := "nats://nats.ts.imetrical.com:4222"
 	nc, err := nats.Connect(url,
 		// RetryOnFailedConnect is on master, ut not released
 		// nats.RetryOnFailedConnect(true)
