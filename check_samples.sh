@@ -17,3 +17,10 @@ run_query 'Missing samples in last day - group by hour' 'select concat(substring
 # run_query 'Missing samples in last day - group by minute' 'select concat(substring(stamp,1,17),"00") as minute, round(avg(watt),0), count(*) as samples,60-count(*) as missing from watt where stamp>DATE_SUB(NOW(), INTERVAL 24 HOUR) group by minute having missing>0'
 
 # run_query 'Missing samples in last day - group by tenminutes' 'select concat(substring(stamp,1,15),"0:00") as tenmin, round(avg(watt),0), count(*) as samples,600-count(*) as missing from watt where stamp>DATE_SUB(NOW(), INTERVAL 24 HOUR) group by tenmin having missing>=0'
+
+run_query 'Monthly avg kWh' 'select substring(stamp,1,7) as month, round(avg(watt*24/1000),0) as kWh from watt_day where stamp>DATE_SUB(NOW(), INTERVAL 24 MONTH) group by month'
+
+run_query 'Daily avg kWh' 'select substring(stamp,1,10) as day, round(avg(watt*24/1000),0) as kWh from watt_day where stamp>DATE_SUB(NOW(), INTERVAL 30 DAY) group by day'
+
+# Month history
+# run_query 'Monthly avg kWh' 'select substring(stamp,1,7) as month, round(avg(watt*24/1000),0) as kWh from watt_day where stamp>DATE_SUB(NOW(), INTERVAL 10 YEAR) group by month having month like "%-01"'
