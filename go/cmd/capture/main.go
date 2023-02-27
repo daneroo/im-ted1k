@@ -42,7 +42,9 @@ func main() {
 	}
 	defer db.Close()
 
-	writers := []ted1k.EntryWriter{db, nats}
+	// Disable nats for now - Emergency - 2023-02-27
+	// writers := []ted1k.EntryWriter{db, nats}
+	writers := []ted1k.EntryWriter{db}
 	err := ted1k.StartLoop(writers)
 	if err != nil {
 		log.Println(err)
