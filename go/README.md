@@ -6,6 +6,7 @@
 
 ## TODO
 
+- [ ] Better robustness for nats failure (see go-ted1k subscribe)
 - Combine EntryWriters
 - Add Config to ted1k, use from Main
   - nats url, db creds
