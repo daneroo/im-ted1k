@@ -9,11 +9,15 @@
 
 ## TODO
 
+- [ ] publish to 2 topics
+  - "im.qcic.heartbeat" <- message{Stamp, Host, Text}
+  - "im.ted1k.entry" <- entry{Stamp, Watt, Host?}
 - Remove dependencies on debian stretch/mysql5.7/php
 - Move to php7 (`feeds.php`)
 - Remove python or move to `python3`
 - Merge with `git@github.com:daneroo/go-ted1k.git` in `~/Code/Go/src/github.com/daneroo/go-ted1k`
 - ~~Older below~~
+- Fix stamp: Truncate to seconds, and set stamp after poll has returned
 - Restore (at least 2016-.. into database frm last cantor snapshot (and other all day tables?))
 - Should run as another user (mysql creds?)
 - Ability to move volume easily; i.e. another disk

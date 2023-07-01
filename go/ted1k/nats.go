@@ -52,6 +52,8 @@ type message struct {
 	Text  string    `json:"text"` // or "volt,omitempty"
 }
 
+// we need to change the topic to im.ted1k.entry
+// and perhaps add the Host, although what would that be? currently Host is just the connectionName
 func (w NatsWriter) Write(e Entry) error {
 	text := fmt.Sprintf("watts: %d", e.Watts)
 	message := message{Stamp: e.Stamp, Host: host, Text: text}

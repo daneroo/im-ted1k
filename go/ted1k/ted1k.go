@@ -46,11 +46,14 @@ func StartLoop(writers []EntryWriter) error {
 	state := &decoderState{buffer: nil, escapeFlag: false}
 	for {
 		loopStart := time.Now().UTC()
-		stamp := time.Now().UTC() // .Format(fmtRFC3339NoZ) // stamp is set to second (before poll() is called)
 		entries, err := state.poll(s)
 		if err != nil {
 			return err
 		}
+		// We set the time stamp associated to the polled value immediately *after* it has been read.
+		// This is also truncated (rounded down) to the second
+		stamp := time.Now().UTC().Truncate(time.Second)
+
 		if len(entries) == 0 {
 			log.Printf("warning: skipping entry (no entry from poll)\n")
 		} else {
