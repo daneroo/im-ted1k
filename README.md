@@ -1,5 +1,6 @@
 # iMetrical-Energy TED1K
 
+- _2023-07-01_ truncate stamp, upgrade go version (and packages), and ubuntu base for capture
 - _2023-06-30 darwin: modified for `docker compose` and debian stretch archive_
 - _2019-08-21 euler died, move to darwin: go modules, pinned base image to python2.7.15 and use php7_
 - _2018-04-04 Moved to go (vgo) based capture_
