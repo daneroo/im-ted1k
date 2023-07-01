@@ -1,5 +1,6 @@
 # iMetrical-Energy TED1K
 
+- _2023-06-30 darwin: modified for `docker compose` and debian stretch archive_
 - _2019-08-21 euler died, move to darwin: go modules, pinned base image to python2.7.15 and use php7_
 - _2018-04-04 Moved to go (vgo) based capture_
 - _2016-09-17 Adjusted monitoring and docker-compose v2_
@@ -41,9 +42,9 @@ docker buildx build --platform linux/amd64 -t py2-7-15-strech-archive .
 
 ```bash
 # not -it but -i
-time bzcat ted.watt.20190818.0554Z.sql.bz2 | docker exec -i imted1k_teddb_1 mysql ted
+time bzcat ted.watt.20190818.0554Z.sql.bz2 | docker exec -i im-ted1k-teddb-1 mysql ted
 
-docker exec -it imted1k_teddb_1 bash
+docker exec -it im-ted1k-teddb-1 bash
 
 mysqladmin proc
 mysql ted -e 'select min(stamp),max(stamp) from watt;'
@@ -55,9 +56,8 @@ mysql ted -e 'select * from watt where stamp>DATE_SUB(NOW(), INTERVAL 1 HOUR)'
 - Restore Summaries, after restore (darwin) 4039 days since 2008-07-30 as of 2019-08-21
 
 ```bash
-docker exec -it imted1k_summarize_1 bash
+docker exec -it im-ted1k-summarize-1 bash
 time python summarize.py --days 4500 --duration 1
-
 ```
 
 ## Backups
@@ -68,9 +68,9 @@ _Note:_ If your tables are InnoDB, using the --single-transaction option will st
 
 ```bash
 # on darwin - in docker ~ 13min - we shouldn't lock anymore!
-time docker exec -it imted1k_teddb_1 mysqldump --single-transaction --opt ted watt >ted.watt.`date -u +%Y%m%d.%H%MZ`.sql
-# previously (on euler) - in docker: ~4m33s
-time docker exec -it imted1k_teddb_1 mysqldump --opt ted watt >ted.watt.`date -u +%Y%m%d.%H%MZ`.sql
+time docker exec -it im-ted1k-teddb-1 mysqldump --single-transaction --opt ted watt >ted.watt.`date -u +%Y%m%d.%H%MZ`.sql
+# LEGACY: previously (on euler) - in docker: ~4m33s
+time docker exec -it im-ted1k-teddb-1 mysqldump --opt ted watt >ted.watt.`date -u +%Y%m%d.%H%MZ`.sql
 ```
 
 Now archive it: ~6m13s
@@ -83,8 +83,8 @@ scp -p ted.watt.*.sql.bz2 dirac:/Volumes/Space/archive/mirror/ted
 ## To run
 
 ```bash
-docker-compose build --pull
-docker-compose up -d
+docker compose build --pull
+docker compose up -d
 ```
 
 ## 2016-02-20 moving to raspberry pi
@@ -98,15 +98,15 @@ on `pi@pi`:
 ```bash
 cd Code/iMetrical/im-ted1k
 # build (move `./data/` out of way ?)
-docker-compose build
+docker compose build
 # run
-docker-compose up -d
+docker compose up -d
 ```
 
 -Minimal changes, mysql will also be in docker
 -add ssh key pi@pi for github
 -Dockerfile from hypriot/rpi-python
--add teddb mysql server and config in docker-compose
+-add teddb mysql server and config in `docker compose`
 -so teddb is now the hostname instead of 172.17.0.1
 -mysql data volume in ./data/mysql; later in /data/ted/mysql
 
@@ -162,7 +162,7 @@ As I rebuild cantor, and wanting to preserve data capture, I decided to consolid
 Run a single command, and attach data volume, e.g.:
 
 ```bash
-docker run -it --rm  -v $(pwd)/data:/data imted1k_monitor bash
+docker run -it --rm  -v $(pwd)/data:/data im-ted1k-monitor bash
 time python verify.py
 ```
 
