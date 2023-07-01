@@ -2,12 +2,13 @@
 
 - _2019-08-21 euler died, move to darwin: go modules, pinned base image to python2.7.15 and use php7_
 - _2018-04-04 Moved to go (vgo) based capture_
-- _2016-09-17 Adjusted monitoring and docker-compose v2_  
+- _2016-09-17 Adjusted monitoring and docker-compose v2_
 - _2016-03-12 Moving back to x86 (euler, old cantor/goedel)_
 - _We lost data from ( 2016-02-14 21:24:21 , 2016-03-12 06:35:35 ]_
 
 ## TODO
 
+- Remove dependencies on debian stretch/mysql5.7/php
 - Move to php7 (`feeds.php`)
 - Remove python or move to `python3`
 - Merge with `git@github.com:daneroo/go-ted1k.git` in `~/Code/Go/src/github.com/daneroo/go-ted1k`
@@ -19,6 +20,16 @@
 - Will eventually write to .jsonl file concurrently
 - Will eventually port to go and consolidate parts
 - Makefile and Dockerfile(s) in go directory
+
+## 2023-06-30 debian strect end-of-life
+
+Changed the Debian sources to use the archive URLs for stretch version, and remove security and stretch-updates
+
+Testing new build from M2
+
+```bash
+docker buildx build --platform linux/amd64 -t py2-7-15-strech-archive .
+```
 
 ## 2019-08-21 euler died, move to darwin
 
@@ -53,8 +64,12 @@ time python summarize.py --days 4500 --duration 1
 
 We backup ted.watt table, compress and send to dirac:/archive/mirror/ted for Backblaze
 
+_Note:_ If your tables are InnoDB, using the --single-transaction option will start a transaction before running. Rather than locking the entire database, this will let mysqldump retrieve the binlog position without locking the tables at all.
+
 ```bash
-# on euler - in docker: ~4m33s
+# on darwin - in docker ~ 13min - we shouldn't lock anymore!
+time docker exec -it imted1k_teddb_1 mysqldump --single-transaction --opt ted watt >ted.watt.`date -u +%Y%m%d.%H%MZ`.sql
+# previously (on euler) - in docker: ~4m33s
 time docker exec -it imted1k_teddb_1 mysqldump --opt ted watt >ted.watt.`date -u +%Y%m%d.%H%MZ`.sql
 ```
 
@@ -89,11 +104,11 @@ docker-compose up -d
 ```
 
 -Minimal changes, mysql will also be in docker
-    -add ssh key pi@pi for github
-    -Dockerfile from hypriot/rpi-python
-    -add teddb mysql server and config in docker-compose
-    -so teddb is now the hostname instead of 172.17.0.1
-    -mysql data volume in ./data/mysql; later in /data/ted/mysql
+-add ssh key pi@pi for github
+-Dockerfile from hypriot/rpi-python
+-add teddb mysql server and config in docker-compose
+-so teddb is now the hostname instead of 172.17.0.1
+-mysql data volume in ./data/mysql; later in /data/ted/mysql
 
 ## Rebuild cantor
 
@@ -124,7 +139,7 @@ As I rebuild cantor, and wanting to preserve data capture, I decided to consolid
 - Cleanup unneeded src
 - Fix config for MYSQL: Summarize, monitor, publish
   - use 172.17.42.1:3306/ted (implicitly root@container)
-  - works on cantor:guests because of GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION
+  - works on cantor:guests because of GRANT ALL PRIVILEGES ON _._ TO 'root'@'%' WITH GRANT OPTION
   - works on boot2docker guests if mysql's port 3306 is redirected
   - default to aviso@172.17.42.1/ted for cantor:host
 - Include ReadTEDNative.py -> capture.py in docker-compose
@@ -174,7 +189,7 @@ time python Summarize.py --days 2500 --duration 1
 ```
 
 - Run the database on dirac:
-Databse port is exposed so all containers so we can talk to 172.17.42.1:3306/ted without linking.
+  Databse port is exposed so all containers so we can talk to 172.17.42.1:3306/ted without linking.
 
 We can also currently talk to (192.168.5.132) cantor.imetrical.com:3306/ted from dirac...
 

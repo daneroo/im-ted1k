@@ -15,6 +15,19 @@ RUN \
   echo 'America/Montreal'  > /etc/timezone && \
   dpkg-reconfigure --frontend noninteractive tzdata
 
+# Change the Debian sources to use the archive URLs for stretch version, and remove security and stretch-updates
+# --- ORIGINAL /etc/apt/sources.list ---
+# deb http://deb.debian.org/debian stretch main
+# deb http://security.debian.org/debian-security stretch/updates main
+# deb http://deb.debian.org/debian stretch-updates main
+# --- NEW /etc/apt/sources.list ---
+# deb http://archive.debian.org/debian stretch main
+# --------
+RUN sed -i 's|deb.debian.org|archive.debian.org|' /etc/apt/sources.list && \
+    sed -i '/security.debian.org/d' /etc/apt/sources.list && \
+    sed -i '/stretch-updates/d' /etc/apt/sources.list && \
+    echo 'Acquire::Check-Valid-Until "0";' > /etc/apt/apt.conf
+
 # Install Python Dependacies (non pip)
 RUN \
   apt-get update && \
