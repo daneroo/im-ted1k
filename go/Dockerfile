@@ -1,4 +1,4 @@
-FROM golang:1.15 as build
+FROM golang:1.20 as build
 
 WORKDIR $GOPATH/src/github.com/daneroo/im-ted1k/go
 
@@ -17,7 +17,7 @@ RUN go install ./...
 # using ubuntu:20.04 (?because of glibc6 dependancy)
 # FROM gcr.io/distroless/base
 # FROM alpine
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 COPY --from=build /go/bin/capture /
 
 CMD ["/capture"]
