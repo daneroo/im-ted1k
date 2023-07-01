@@ -22,7 +22,28 @@
 - Will eventually port to go and consolidate parts
 - Makefile and Dockerfile(s) in go directory
 
-## 2023-06-30 debian strect end-of-life
+## Counts
+
+- mysql
+  | Year | Min Date | Max Date | Count |
+  | ---- | ------------------- | ------------------- | -------- |
+  | 2007 | 2007-08-28 00:02:18 | 2007-08-28 20:56:22 | 75026 |
+  | 2016 | 2016-03-12 06:35:35 | 2016-12-31 23:59:59 | 24957526 |
+  | 2017 | 2017-01-01 00:00:00 | 2017-12-31 23:59:59 | 29321718 |
+  | 2018 | 2018-01-01 00:00:00 | 2018-12-31 23:59:59 | 30758853 |
+  | 2019 | 2019-01-01 00:00:00 | 2019-12-31 23:59:59 | 30639015 |
+  | 2020 | 2020-01-01 00:00:00 | 2020-12-31 23:59:59 | 31478859 |
+  | 2021 | 2021-01-01 00:00:00 | 2021-12-31 23:59:59 | 31401094 |
+  | 2022 | 2022-01-01 00:00:00 | 2022-12-31 23:59:59 | 31425006 |
+  | 2023 | 2023-01-01 00:00:00 | 2023-07-01 02:56:04 | 15336517 |
+
+- timescale
+  | Year | Min Date (GMT) | Max Date (GMT) | Count |
+  | ---- | ------------------- | ------------------- | -------- |
+  | 2022 | 2022-12-29 21:56:41 | 2022-12-31 23:59:59 | 180131 |
+  | 2023 | 2023-01-01 00:00:00 | 2023-07-01 03:03:24 | 15424260 |
+
+## 2023-06-30 debian stretch end-of-life
 
 Changed the Debian sources to use the archive URLs for stretch version, and remove security and stretch-updates
 
@@ -42,6 +63,8 @@ docker buildx build --platform linux/amd64 -t py2-7-15-strech-archive .
 
 ```bash
 # not -it but -i
+# on darwin 2023-06-30: took ~47m
+time cat ted.watt.20230630.2142Z.sql |docker exec -i im-ted1k-teddb-1 mysql ted
 time bzcat ted.watt.20190818.0554Z.sql.bz2 | docker exec -i im-ted1k-teddb-1 mysql ted
 
 docker exec -it im-ted1k-teddb-1 bash
@@ -53,11 +76,11 @@ mysql ted -e 'select * from watt where stamp>DATE_SUB(NOW(), INTERVAL 1 HOUR)'
 
 ### Re-Summarize
 
-- Restore Summaries, after restore (darwin) 4039 days since 2008-07-30 as of 2019-08-21
+- Restore Summaries, after restore (darwin) 5448 days since 2008-07-30 as of 2023-06-30
 
 ```bash
 docker exec -it im-ted1k-summarize-1 bash
-time python summarize.py --days 4500 --duration 1
+time python summarize.py --days 6000 --duration 1
 ```
 
 ## Backups
@@ -73,11 +96,11 @@ time docker exec -it im-ted1k-teddb-1 mysqldump --single-transaction --opt ted w
 time docker exec -it im-ted1k-teddb-1 mysqldump --opt ted watt >ted.watt.`date -u +%Y%m%d.%H%MZ`.sql
 ```
 
-Now archive it: ~6m13s
+Now compress and archive it: ~12m13s (data from 2016ish to 2023-06-30)
 
 ```bash
 time bzip2 ted.watt.*.sql
-scp -p ted.watt.*.sql.bz2 dirac:/Volumes/Space/archive/mirror/ted
+scp -p ted.watt.*.sql.bz2 galois:/Volumes/Space/archive/mirror/ted
 ```
 
 ## To run
