@@ -74,13 +74,13 @@ We backup ted.watt table, compress and send to dirac:/archive/mirror/ted for Bac
 _Note:_ If your tables are InnoDB, using the --single-transaction option will start a transaction before running. Rather than locking the entire database, this will let mysqldump retrieve the binlog position without locking the tables at all.
 
 ```bash
-# on darwin - in docker ~ 13min - we shouldn't lock anymore!
+# on darwin - in docker ~ 18min - 2026-02-20 - we shouldn't lock anymore!
 time docker exec -it im-ted1k-teddb-1 mysqldump --single-transaction --opt ted watt >ted.watt.`date -u +%Y%m%d.%H%MZ`.sql
 # LEGACY: previously (on euler) - in docker: ~4m33s
 time docker exec -it im-ted1k-teddb-1 mysqldump --opt ted watt >ted.watt.`date -u +%Y%m%d.%H%MZ`.sql
 ```
 
-Now compress and archive it: ~12m13s (data from 2016ish to 2023-06-30)
+Now compress and archive it: ~17m (data from 2016ish to 2026-02-20)
 
 ```bash
 time bzip2 ted.watt.*.sql
